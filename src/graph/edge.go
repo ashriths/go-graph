@@ -1,5 +1,11 @@
 package graph
 
-type Edge struct {
-	value string
+type Edge interface {
+	GetSrcVertex() Vertex
+	GetDestVertex() Vertex
+}
+
+type GoGraphEdge struct {
+	srcVertex  Vertex
+	destVertex Vertex
 }
