@@ -1,6 +1,6 @@
 package graph
 
-type Element interface {
+type ElementInterface interface {
 	Id() int64
 	Label() string
 	Graph() Graph
@@ -10,35 +10,35 @@ type Element interface {
 	Remove() bool
 }
 
-type GoGraphElement struct {
+type Element struct {
 	id    int64
 	label string
 }
 
-func (self *GoGraphElement) Id() int64 {
+func (self *Element) Id() int64 {
 	panic("todo")
 }
 
-func (self *GoGraphElement) Label() string {
+func (self *Element) Label() string {
 	panic("todo")
 }
 
-func (self *GoGraphElement) Graph() Graph {
+func (self *Element) Graph() Graph {
 	panic("todo")
 }
 
-func (self *GoGraphElement) GetKeys() map[string]bool {
+func (self *Element) GetKeys() map[string]bool {
 	panic("todo")
 }
 
-func (self *GoGraphElement) GetValue(key string) string {
+func (self *Element) GetValue(key string) string {
 	panic("todo")
 }
 
-func (self *GoGraphElement) SetKey(key string, value string) bool {
+func (self *Element) SetKey(key string, value string) bool {
 	panic("todo")
 }
 
-func (self *GoGraphElement) Remove() bool {
+func (self *Element) Remove() bool {
 	panic("todo")
 }
