@@ -1,8 +1,8 @@
 package metadata
 
 import (
-	"go-graph/src/graph"
-	"go-graph/src/storage"
+	"go-graph/go/src/graph"
+	"go-graph/go/src/storage"
 )
 
 type Metadata interface {

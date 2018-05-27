@@ -1,10 +1,11 @@
-.PHONY: all rall fmt tags lc doc
+.PHONY: build all rall fmt tags lc doc
 
-all:
-	go install ./src
+
+all: build
+	go install ./src/...
 
 rall:
-	go build -a ./src
+	go build -a ./src/...
 
 fmt:
 	gofmt -s -w -l .
@@ -17,4 +18,7 @@ lc:
 
 doc:
 	godoc -http=:8000
+
+build:
+	go get github.com/google/uuid
 

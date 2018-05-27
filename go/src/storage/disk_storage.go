@@ -1,6 +1,6 @@
 package storage
 
-import "go-graph/src/graph"
+import "go-graph/go/src/graph"
 
 type DiskStorage struct {
 }

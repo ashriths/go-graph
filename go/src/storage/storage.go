@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"go-graph/src/graph"
+	"go-graph/go/src/graph"
 )
 
 type Storage interface {

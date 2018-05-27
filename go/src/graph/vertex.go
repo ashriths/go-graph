@@ -2,10 +2,10 @@ package graph
 
 type VertexInterface interface {
 	AddEdge(label string, destVertex VertexInterface, properties map[string]string) error
-	InEdges(edgeLabels []string) []EdgeInterface
-	OutEdges(edgeLabels []string) []EdgeInterface
-	ParentVertices(edgeLabels []string) []VertexInterface
-	ChildVertices(edgeLabels []string) []VertexInterface
+	GetInEdges(edgeLabels []string) []EdgeInterface
+	GetOutEdges(edgeLabels []string) []EdgeInterface
+	GetParentVertices(edgeLabels []string) []VertexInterface
+	GetChildVertices(edgeLabels []string) []VertexInterface
 }
 
 type Vertex struct {
@@ -19,11 +19,11 @@ func (self *Vertex) AddEdge(label string, destVertex VertexInterface, properties
 	panic("todo")
 }
 
-func (self *Vertex) InEdges(edgeLabels []string) []EdgeInterface {
+func (self *Vertex) GetInEdges(edgeLabels []string) []EdgeInterface {
 	panic("todo")
 }
 
-func (self *Vertex) OutEdges(edgeLabels []string) []EdgeInterface {
+func (self *Vertex) GetOutEdges(edgeLabels []string) []EdgeInterface {
 	panic("todo")
 }
 
