@@ -7,9 +7,10 @@ type EdgeInterface interface {
 
 type Edge struct {
 	Element
-	srcVertex  VertexInterface
-	destVertex VertexInterface
-	properties map[string]string
+	SrcVertex  VertexInterface
+	DestVertex VertexInterf
+	ace
+	Properties map[string]string
 }
 
 func (self *Edge) GetSrcVertex() VertexInterface {

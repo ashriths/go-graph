@@ -6,5 +6,5 @@ import (
 )
 
 type Metadata interface {
-	GetNodeLocation(node *graph.Node) storage.Storage
+	GetNodeLocation(node *graph.Vertex) storage.Storage
 }

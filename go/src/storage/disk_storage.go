@@ -1,6 +1,9 @@
 package storage
 
-import "go-graph/go/src/graph"
+import (
+	"go-graph/go/src/graph"
+	"github.com/google/uuid"
+)
 
 type DiskStorage struct {
 }
@@ -9,15 +12,19 @@ func NewDiskStorage() *DiskStorage {
 	return &DiskStorage{}
 }
 
-func (*DiskStorage) GetPath(src *graph.Node, dest *graph.Node) (error, []*graph.Node) {
+func (*DiskStorage) GetVertex(uuid uuid.UUID) (error, *graph.Vertex) {
 	panic("todo")
 }
 
-func (*DiskStorage) GetAllRelations(node *graph.Node) (error, []*graph.Node) {
+func (*DiskStorage) GetEdge(uuid uuid.UUID) (error, *graph.Edge) {
 	panic("todo")
 }
 
-func (*DiskStorage) GetRelation(node *graph.Node, relationName string) (error, []*graph.Node) {
+func (*DiskStorage) GetEdges(node *graph.Vertex) (error, []*graph.Edge) {
+	panic("todo")
+}
+
+func (*DiskStorage) GetEdgeByName(node *graph.Vertex, relationName string) (error, *graph.Edge) {
 	panic("todo")
 }
 

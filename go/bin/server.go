@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"go-graph/src/system"
-	"go-graph/src/server"
+	"go-graph/go/src/system"
+	"go-graph/go/src/server"
 )
 
 var (
@@ -17,6 +17,5 @@ func main() {
 	panic("Todo")
 	server.NewServer(&server.ServerConfig{
 		Addr: addr,
-		MetadataServers:
 	})
 }

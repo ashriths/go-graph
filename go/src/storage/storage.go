@@ -2,10 +2,12 @@ package storage
 
 import (
 	"go-graph/go/src/graph"
+	"github.com/google/uuid"
 )
 
 type Storage interface {
-	GetPath(src *graph.Node, dest *graph.Node) (error, []*graph.Node)
-	GetAllRelations(node *graph.Node) (error, []*graph.Node)
-	GetRelation(node *graph.Node, relationName string) (error, []*graph.Node)
+	GetVertex(uuid uuid.UUID) (error, *graph.Vertex)
+	GetEdge(uuid uuid.UUID) (error, *graph.Edge)
+	GetEdges(node *graph.Vertex) (error, []*graph.Edge)
+	GetEdgeByName(node *graph.Vertex, relationName string) (error, *graph.Edge)
 }

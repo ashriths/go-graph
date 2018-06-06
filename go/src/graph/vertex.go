@@ -12,7 +12,7 @@ type Vertex struct {
 	Element
 	OutEdges   []EdgeInterface
 	InEdges    []EdgeInterface
-	properties map[string]string
+	Properties map[string]string
 }
 
 func (self *Vertex) AddEdge(label string, destVertex VertexInterface, properties map[string]string) error {
