@@ -1,44 +1,44 @@
 package graph
 
-type ElementInterface interface {
-	Id() int64
-	Label() string
-	Graph() Graph
-	GetKeys() map[string]bool
-	GetValue(key string) string
-	SetKey(key string, value string) bool
-	Remove() bool
+import "github.com/google/uuid"
+
+type Element interface {
+	GetUUID() uuid.UUID
+	GetLabel() (error, string)
+	Graph() (error, Graph)
+	GetProperties() (error, interface{})
+	SetProperties(props interface{}) error
+	Remove() error
 }
 
-type Element struct {
-	id    int64
-	label string
+type GoGraphElement struct {
+	UUID  uuid.UUID
+	Label string
+	Properties interface{}
 }
 
-func (self *Element) Id() int64 {
+func (self *GoGraphElement) GetUUID() uuid.UUID {
+	return self.UUID
+}
+
+func (self *GoGraphElement) GetLabel() (error, string) {
+	return nil, self.Label
+}
+
+func (self *GoGraphElement) Graph() (error, Graph) {
 	panic("todo")
 }
 
-func (self *Element) Label() string {
+func (self *GoGraphElement) GetProperties() (error, interface{})  {
 	panic("todo")
 }
 
-func (self *Element) Graph() Graph {
+func (self *GoGraphElement) SetProperties(properties interface{}) error  {
 	panic("todo")
 }
 
-func (self *Element) GetKeys() map[string]bool {
+func (self *GoGraphElement) Remove() error {
 	panic("todo")
 }
 
-func (self *Element) GetValue(key string) string {
-	panic("todo")
-}
-
-func (self *Element) SetKey(key string, value string) bool {
-	panic("todo")
-}
-
-func (self *Element) Remove() bool {
-	panic("todo")
-}
+var _ Element = new(GoGraphElement)

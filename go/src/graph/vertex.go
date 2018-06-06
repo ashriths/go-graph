@@ -1,36 +1,33 @@
 package graph
 
-type VertexInterface interface {
-	AddEdge(label string, destVertex VertexInterface, properties map[string]string) error
-	GetInEdges(edgeLabels []string) []EdgeInterface
-	GetOutEdges(edgeLabels []string) []EdgeInterface
-	GetParentVertices(edgeLabels []string) []VertexInterface
-	GetChildVertices(edgeLabels []string) []VertexInterface
+type Vertex interface {
+	GetInEdges(edgeLabels []string) (error, []Edge)
+	GetOutEdges(edgeLabels []string) (error, []Edge)
+	GetParentVertices(edgeLabels []string) (error, []Vertex)
+	GetChildVertices(edgeLabels []string) (error, []Vertex)
 }
 
-type Vertex struct {
+type GoGraphVertex struct {
 	Element
-	OutEdges   []EdgeInterface
-	InEdges    []EdgeInterface
-	Properties map[string]string
+	OutEdges   []Edge
+	InEdges    []Edge
 }
 
-func (self *Vertex) AddEdge(label string, destVertex VertexInterface, properties map[string]string) error {
+
+func (self *GoGraphVertex) GetInEdges(edgeLabels []string) (error, []Edge) {
 	panic("todo")
 }
 
-func (self *Vertex) GetInEdges(edgeLabels []string) []EdgeInterface {
+func (self *GoGraphVertex) GetOutEdges(edgeLabels []string) (error,[]Edge) {
 	panic("todo")
 }
 
-func (self *Vertex) GetOutEdges(edgeLabels []string) []EdgeInterface {
+func (self *GoGraphVertex) GetParentVertices(edgeLabels []string) (error, []Vertex) {
 	panic("todo")
 }
 
-func (self *Vertex) ParentVertices(edgeLabels []string) []VertexInterface {
+func (self *GoGraphVertex) GetChildVertices(edgeLabels []string) (error, []Vertex) {
 	panic("todo")
 }
 
-func (self *Vertex) ChildVertices(edgeLabels []string) []VertexInterface {
-	panic("todo")
-}
+var _ Vertex = new(GoGraphVertex)
