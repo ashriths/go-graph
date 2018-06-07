@@ -7,15 +7,15 @@ import (
 )
 
 var (
-	addr = flag.String("addr", "localhost:rand", "server listen address")
+	serverAddr = flag.String("addr", "localhost:rand", "server listen address")
 )
 
 func main() {
 	flag.Parse()
 
-	*addr = system.Resolve(*addr)
+	*serverAddr = system.Resolve(*serverAddr)
 	panic("Todo")
 	server.NewServer(&server.ServerConfig{
-		Addr: addr,
+		Addr: serverAddr,
 	})
 }

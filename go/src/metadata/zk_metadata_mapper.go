@@ -1,15 +1,15 @@
 package metadata
 
 import (
-	"go-graph/go/src/graph"
 	"go-graph/go/src/storage"
+	"github.com/google/uuid"
 )
 
 type ZkMetadataMapper struct {
 	Addrs []string
 }
 
-func (self *ZkMetadataMapper) GetNodeLocation(node *graph.Node) storage.Storage {
+func (self *ZkMetadataMapper) GetNodeLocation(nodeId uuid.UUID) storage.Storage {
 	panic("todo")
 }
 

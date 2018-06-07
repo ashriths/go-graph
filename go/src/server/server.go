@@ -6,7 +6,6 @@ type Server struct {
 }
 
 type ServerConfig struct {
-	MetadataServers []string
 	Addr string
 	Ready chan<- bool
 }

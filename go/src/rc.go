@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 )
 
 var DefaultRCPath = "conf.rc"
@@ -23,28 +22,7 @@ func (self *RC) BackCount() int {
 	return len(self.Backs)
 }
 
-func (self *RC) BackConfig(i int, s Storage) *BackConfig {
-	ret := new(BackConfig)
-	ret.Addr = self.Backs[i]
-	ret.Store = s
-	ret.Ready = make(chan bool, 1)
 
-	return ret
-}
-
-func (self *RC) KeeperConfig(i int) *KeeperConfig {
-	if i >= len(self.Keepers) {
-		panic("keeper index out of range")
-	}
-
-	ret := new(KeeperConfig)
-	ret.Backs = self.Backs
-	ret.Addrs = self.Keepers
-	ret.This = i
-	ret.Id = time.Now().UnixNano()
-
-	return ret
-}
 
 func LoadRC(p string) (*RC, error) {
 	fin, e := os.Open(p)

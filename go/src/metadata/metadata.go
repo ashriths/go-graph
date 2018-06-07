@@ -1,10 +1,10 @@
 package metadata
 
 import (
-	"go-graph/go/src/graph"
 	"go-graph/go/src/storage"
+	"github.com/google/uuid"
 )
 
 type Metadata interface {
-	GetNodeLocation(node *graph.Vertex) storage.Storage
+	GetNodeLocation(nodeId uuid.UUID) storage.Storage
 }
