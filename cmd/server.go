@@ -1,9 +1,9 @@
-package main
+package cmd
 
 import (
 	"flag"
-	"go-graph/src/system"
-	"go-graph/src/server"
+	"go-graph/system"
+	"go-graph/server"
 )
 
 var (

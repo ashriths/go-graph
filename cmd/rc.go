@@ -1,4 +1,4 @@
-package rc
+package cmd
 
 import (
 	"encoding/json"
