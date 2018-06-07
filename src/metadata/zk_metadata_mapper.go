@@ -1,7 +1,7 @@
 package metadata
 
 import (
-	"go-graph/go/src/storage"
+	"go-graph/src/storage"
 	"github.com/google/uuid"
 )
 

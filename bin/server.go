@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"go-graph/go/src/system"
-	"go-graph/go/src/server"
+	"go-graph/src/system"
+	"go-graph/src/server"
 )
 
 var (
