@@ -1,10 +1,11 @@
-package cmd
+package mkrc
 
 import (
 	"flag"
 	"fmt"
 	"log"
-	"go-graph/go/src/system"
+	"go-graph/system"
+	"github.com/ashriths/go-graph/cmd"
 )
 
 // For now, we assume that we have sequentially-IP'd hosts that don't span more
@@ -19,6 +20,7 @@ var (
 	nmetadata   = flag.Int("nmetadata", 1, "number of metadata backends")
 	full    = flag.Bool("full", false, "setup of 10 back-ends and 3 keepers")
 	fixPort = flag.Bool("fix", false, "fix port numbers; don't use random ones")
+	file     = flag.String("file", cmd.DefaultRCPath, "config file path")
 )
 
 func main() {
@@ -41,9 +43,9 @@ func main() {
 		p = system.RandPort()
 	}
 
-	rc := new(trib.RC)
-	rc.Backs = make([]string, *nback)
-	rc.Keepers = make([]string, *nkeep)
+	rc := new(cmd.RC)
+	rc.Storage = make([]string, *nserver)
+	rc.MetadataServers = make([]string, *nmetadata)
 
 	if !*local {
 		const ipOffset = FIRST_IP
@@ -51,7 +53,7 @@ func main() {
 
 		for i := 0; i < *nserver; i++ {
 			host := fmt.Sprintf("%s.%d", IP_PREFIX, ipOffset+i%nmachine)
-			rc.Backs[i] = fmt.Sprintf("%s:%d", host, p+i/nmachine)
+			rc.Storage[i] = fmt.Sprintf("%s:%d", host, p+i/nmachine)
 		}
 
 		p += *nserver / nmachine
@@ -61,24 +63,24 @@ func main() {
 
 		for i := 0; i < *nmetadata; i++ {
 			host := fmt.Sprintf("%s.%d", IP_PREFIX, ipOffset+i%nmachine)
-			rc.Keepers[i] = fmt.Sprintf("%s:%d", host, p)
+			rc.MetadataServers[i] = fmt.Sprintf("%s:%d", host, p)
 		}
 	} else {
 		for i := 0; i < *nserver; i++ {
-			rc.Backs[i] = fmt.Sprintf("localhost:%d", p)
+			rc.Storage[i] = fmt.Sprintf("localhost:%d", p)
 			p++
 		}
 
 		for i := 0; i < *nmetadata; i++ {
-			rc.Keepers[i] = fmt.Sprintf("localhost:%d", p)
+			rc.MetadataServers[i] = fmt.Sprintf("localhost:%d", p)
 			p++
 		}
 	}
 
 	fmt.Println(rc.String())
 
-	if *frc != "" {
-		e := rc.Save(*frc)
+	if *file != "" {
+		e := rc.Save(*file)
 		if e != nil {
 			log.Fatal(e)
 		}

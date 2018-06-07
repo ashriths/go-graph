@@ -1,4 +1,4 @@
-package cmd
+package server
 
 import (
 	"flag"
@@ -16,6 +16,6 @@ func main() {
 	*serverAddr = system.Resolve(*serverAddr)
 	panic("Todo")
 	server.NewServer(&server.ServerConfig{
-		Addr: serverAddr,
+		Addr: *serverAddr,
 	})
 }

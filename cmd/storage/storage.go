@@ -1,13 +1,13 @@
-package cmd
+package storage
 
 import (
 	"flag"
-	"go-graph/go/src/system"
+	"go-graph/system"
 	"net/rpc"
 	"fmt"
 	"net"
 	"net/http"
-	"go-graph/go/src/storage"
+	"go-graph/storage"
 )
 
 var (

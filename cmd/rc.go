@@ -9,8 +9,8 @@ import (
 var DefaultRCPath = "conf.rc"
 
 type RC struct {
-	Backs   []string
-	Keepers []string
+	Storage   []string
+	MetadataServers []string
 }
 
 type BackAddr struct {
@@ -19,7 +19,7 @@ type BackAddr struct {
 }
 
 func (self *RC) BackCount() int {
-	return len(self.Backs)
+	return len(self.Storage)
 }
 
 
