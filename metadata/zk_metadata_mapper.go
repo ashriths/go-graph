@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/samuel/go-zookeeper/zk"
 	"path"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/samuel/go-zookeeper/zk"
 )
 
 const (
@@ -88,7 +89,8 @@ func (self *ZkMetadataMapper) createElementZnode(graphID uuid.UUID, elementID uu
 	return nil
 }
 
-func (self *ZkMetadataMapper) getVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) (error, []string) {
+func (self *ZkMetadataMapper) getVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) ([]string, error) {
+
 	var buffer bytes.Buffer
 	var partitionID string
 	var backendIDs, children []string
@@ -101,49 +103,55 @@ func (self *ZkMetadataMapper) getVertexLocation(graphID uuid.UUID, vertexID uuid
 
 	// get partitionID from graphID and vertexID
 	buffer.WriteString("/graph")
+	buffer.WriteString("/")
 	buffer.WriteString(graphID.String())
+	buffer.WriteString("/")
 	buffer.WriteString("vertices")
+	buffer.WriteString("/")
 	buffer.WriteString(vertexID.String())
 	data, _, err = conn.Get(buffer.String())
 	if err != nil {
 		fmt.Printf("Error while getting %s vertex", vertexID.String())
-		return err, nil
+		return nil, err
 	}
 	partitionID = string(data)
 
 	//  get backends from paritionID
 	buffer.Reset()
-	buffer.WriteString("/graph")
+	buffer.WriteString("/graph/")
 	buffer.WriteString(graphID.String())
+	buffer.WriteString("/")
 	buffer.WriteString("partitions")
+	buffer.WriteString("/")
 	buffer.WriteString(partitionID)
 	data, _, err = conn.Get(buffer.String())
 	if err != nil {
 		fmt.Printf("Error while getting %s paritionID", partitionID)
-		return err, nil
+		return nil, err
 	}
 	err = json.Unmarshal(data, &dat)
 	if err != nil {
 		fmt.Printf("Error while unmarshalling %s paritionID's backend locations", partitionID)
-		return err, nil
+		return nil, err
 	}
 
-	backendIDs = append([]string{dat["Primary"]}, dat["Secondaries"])
+	backendIDs = append([]string{dat["Primary"].(string)}, backendIDs...)
+	backendIDs = append(backendIDs, dat["Secondaries"].([]string)...)
 
-	for _, backend_id := range backendIDs {
+	for _, backendID := range backendIDs {
 		buffer.Reset()
 		buffer.WriteString("/backends")
 		buffer.WriteString("/")
-		buffer.WriteString(backend_id)
+		buffer.WriteString(backendID)
 		data, _, err = conn.Get(buffer.String())
 		if err != nil {
-			fmt.Printf("Error while getting backend address of %s backendID", backend_id)
-			return err, nil
+			fmt.Printf("Error while getting backend address of %s backendID", backendID)
+			return nil, err
 		}
 		children = append(children, string(data))
 	}
 
-	return nil, children
+	return children, err
 }
 
 func (self *ZkMetadataMapper) setVertexLocation(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error {
@@ -152,8 +160,11 @@ func (self *ZkMetadataMapper) setVertexLocation(graphID uuid.UUID, vertexID uuid
 	var exists bool
 	var err error
 	buffer.WriteString("/graph")
+	buffer.WriteString("/")
 	buffer.WriteString(graphID.String())
+	buffer.WriteString("/")
 	buffer.WriteString("vertices")
+	buffer.WriteString("/")
 	buffer.WriteString(vertexID.String())
 	exists, _, err = conn.Exists(buffer.String())
 	if err != nil {
