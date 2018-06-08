@@ -1,22 +1,22 @@
 package graph
 
-type Edge interface {
+type EdgeInterface interface {
 	GetSrcVertex() (error, Vertex)
 	GetDestVertex() (error, Vertex)
 }
 
-type GoGraphEdge struct {
+type Edge struct {
 	Element
 	SrcVertex  Vertex
 	DestVertex Vertex
 }
 
-func (self *GoGraphEdge) GetSrcVertex() (error, Vertex) {
+func (self *Edge) GetSrcVertex() (error, Vertex) {
 	panic("todo")
 }
 
-func (self *GoGraphEdge) GetDestVertex() (error, Vertex) {
+func (self *Edge) GetDestVertex() (error, Vertex) {
 	panic("todo")
 }
 
-var _ Edge = new(GoGraphEdge)
+var _ EdgeInterface = new(Edge)

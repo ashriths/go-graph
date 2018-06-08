@@ -1,38 +1,38 @@
 package graph
 
-type Vertex interface {
+type VertexInterface interface {
 	GetInEdges(edgeLabels []string) (error, []Edge)
 	GetOutEdges(edgeLabels []string) (error, []Edge)
 	GetParentVertices(edgeLabels []string) (error, []Vertex)
 	GetChildVertices(edgeLabels []string) (error, []Vertex)
 }
 
-type GoGraphVertex struct {
-	GoGraphElement
+type Vertex struct {
+	Element
 	OutEdges   []Edge
 	InEdges    []Edge
 }
 
 
-func (self *GoGraphVertex) GetInEdges(edgeLabels []string) (error, []Edge) {
+func (self *Vertex) GetInEdges(edgeLabels []string) (error, []Edge) {
 	panic("todo")
 }
 
-func (self *GoGraphVertex) GetOutEdges(edgeLabels []string) (error,[]Edge) {
+func (self *Vertex) GetOutEdges(edgeLabels []string) (error,[]Edge) {
 	panic("todo")
 }
 
-func (self *GoGraphVertex) GetParentVertices(edgeLabels []string) (error, []Vertex) {
+func (self *Vertex) GetParentVertices(edgeLabels []string) (error, []Vertex) {
 	panic("todo")
 }
 
-func (self *GoGraphVertex) GetChildVertices(edgeLabels []string) (error, []Vertex) {
+func (self *Vertex) GetChildVertices(edgeLabels []string) (error, []Vertex) {
 	panic("todo")
 }
 
-func V(data string) *GoGraphVertex{
-	return &GoGraphVertex{
-		GoGraphElement: GoGraphElement{
+func V(data string) *Vertex{
+	return &Vertex{
+		Element: Element{
 			Label:data,
 			UUID:nil,
 			Properties:nil,
@@ -42,4 +42,4 @@ func V(data string) *GoGraphVertex{
 	}
 }
 
-var _ Vertex = new(GoGraphVertex)
+var _ VertexInterface = new(Vertex)

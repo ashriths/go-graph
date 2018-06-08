@@ -39,6 +39,7 @@ func (self *StorageClient) Call(method string, args interface{}, reply interface
 	self.Connect(false)
 	logf("%v >> %v Args: %v(%T)\n", self.Addr, method, args, args)
 	if e := self.Conn.Call(method, args, reply); e != nil {
+		logln("Error", e)
 		if e := self.Connect(true); e != nil {
 			return e
 		}
@@ -50,7 +51,7 @@ func (self *StorageClient) Call(method string, args interface{}, reply interface
 	return nil
 }
 
-func (self *StorageClient) StoreVertex(vertex graph.Vertex, uuid *uuid.UUID) error {
+func (self *StorageClient) StoreVertex(vertex *graph.Vertex, uuid *uuid.UUID) error {
 	return self.Call("Storage.StoreVertex", vertex, uuid)
 }
 

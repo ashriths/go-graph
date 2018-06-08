@@ -29,7 +29,7 @@ func GetStore(storeType string)  storage.IOMapper{
 func main() {
 	flag.Parse()
 	args := flag.Args()
-
+	storage.Logging = true
 	n := 0
 	if len(args) == 0 {
 		rc, e := cmd.LoadRC(*frc)

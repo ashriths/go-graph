@@ -1,4 +1,4 @@
-package storage_client
+package main
 
 import (
 	"flag"
@@ -10,6 +10,7 @@ import (
 	"github.com/ashriths/go-graph/graph"
 	"github.com/google/uuid"
 )
+
 
 func noError(e error) {
 	if e != nil {
@@ -63,8 +64,8 @@ func printList(lst []string) {
 	}
 }
 
-func V(data string) *graph.GoGraphVertex{
-	return &graph.GoGraphVertex{GoGraphElement:graph.GoGraphElement{Label:data}}
+func V(data string) *graph.Vertex{
+	return &graph.Vertex{Element:graph.Element{Label:data}}
 }
 
 const help = `Usage:
@@ -132,6 +133,7 @@ func runPrompt(s *storage.StorageClient) {
 }
 
 func main() {
+	storage.Logging = true
 	flag.Parse()
 	args := flag.Args()
 	if len(args) < 1 {

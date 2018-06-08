@@ -2,7 +2,7 @@ package graph
 
 import "github.com/google/uuid"
 
-type Graph interface {
+type GraphInterface interface {
 	GetUUID() uuid.UUID
 	GetLabel() (error, string)
 	GetProperties() (error, interface{})
@@ -12,7 +12,7 @@ type Graph interface {
 	AddEdge(src Vertex, dest Vertex, properties interface{}) (error, Edge)
 }
 
-type GoGraph struct {
+type Graph struct {
 	UUID uuid.UUID
 	Label string
 	Properties interface{}
@@ -28,32 +28,32 @@ func GetGraph(uuid uuid.UUID) Graph{
 	panic("todo")
 }
 
-func (self *GoGraph) GetUUID() uuid.UUID {
+func (self *Graph) GetUUID() uuid.UUID {
 	return self.UUID
 }
 
-func (self *GoGraph) GetLabel() (error, string) {
+func (self *Graph) GetLabel() (error, string) {
 	return nil, self.Label
 }
 
-func (self *GoGraph) GetProperties() (error, interface{}){
+func (self *Graph) GetProperties() (error, interface{}){
 	panic("todo")
 }
 
-func (self *GoGraph) GetVertices() (error, []Vertex) {
+func (self *Graph) GetVertices() (error, []Vertex) {
 	panic("todo")
 }
 
-func (self *GoGraph) GetEdges() (error, []Edge) {
+func (self *Graph) GetEdges() (error, []Edge) {
 	panic("todo")
 }
 
-func (self *GoGraph) AddVertex(properties interface{}) (error, Vertex){
+func (self *Graph) AddVertex(properties interface{}) (error, Vertex){
 	panic("todo")
 }
 
-func (self *GoGraph) AddEdge(src Vertex, dest Vertex, properties interface{}) (error, Edge){
+func (self *Graph) AddEdge(src Vertex, dest Vertex, properties interface{}) (error, Edge){
 	panic("todo")
 }
 
-var _ Graph = new(GoGraph)
+var _ GraphInterface = new(Graph)

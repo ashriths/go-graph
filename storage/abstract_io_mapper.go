@@ -7,7 +7,7 @@ import (
 
 // IO Mapper is the Storage Backend Interface
 type IOMapper interface {
-	StoreVertex(vertex graph.Vertex, uuid *uuid.UUID) error
+	StoreVertex(vertex *graph.Vertex, uuid *uuid.UUID) error
 	StoreEdge(edge *graph.Edge, uuid *uuid.UUID) error
 
 	UpdateProperties(element *graph.Element, success *bool) error

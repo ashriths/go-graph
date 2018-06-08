@@ -2,7 +2,7 @@ package graph
 
 import "github.com/google/uuid"
 
-type Element interface {
+type ElementInterface interface {
 	GetUUID() uuid.UUID
 	GetLabel() (error, string)
 	Graph() (error, Graph)
@@ -11,34 +11,34 @@ type Element interface {
 	Remove() error
 }
 
-type GoGraphElement struct {
+type Element struct {
 	UUID  *uuid.UUID
 	Label string
 	Properties interface{}
 }
 
-func (self *GoGraphElement) GetUUID() uuid.UUID {
+func (self *Element) GetUUID() uuid.UUID {
 	return *self.UUID
 }
 
-func (self *GoGraphElement) GetLabel() (error, string) {
+func (self *Element) GetLabel() (error, string) {
 	return nil, self.Label
 }
 
-func (self *GoGraphElement) Graph() (error, Graph) {
+func (self *Element) Graph() (error, Graph) {
 	panic("todo")
 }
 
-func (self *GoGraphElement) GetProperties() (error, interface{})  {
+func (self *Element) GetProperties() (error, interface{})  {
 	panic("todo")
 }
 
-func (self *GoGraphElement) SetProperties(properties interface{}) error  {
+func (self *Element) SetProperties(properties interface{}) error  {
 	panic("todo")
 }
 
-func (self *GoGraphElement) Remove() error {
+func (self *Element) Remove() error {
 	panic("todo")
 }
 
-var _ Element = new(GoGraphElement)
+var _ ElementInterface = new(Element)
