@@ -43,7 +43,7 @@ func (self *ZkMetadataMapper) getZnodeData(znodePath string) (map[string]interfa
 	conn := connect(self.connection, self.err)
 
 	//Fetch and unmarshal data for znode
-	data, _, err = conn.Get(znodePath)
+	data, _, err := conn.Get(znodePath)
 	if err != nil {
 		fmt.Printf("Error while getting znode at path: %s", znodePath)
 		return make(map[string]interface{}), err
@@ -59,17 +59,25 @@ func (self *ZkMetadataMapper) getZnodeData(znodePath string) (map[string]interfa
 	return dat, nil
 }
 
-func setZnodeData(znodePath string, data interface{}) error {
+func (self *ZkMetadataMapper) setZnodeData(znodePath string, data interface{}) error {
 	//Establish connection of zookeeper
-	con := connect(self.connection, self.err)
-}
+	conn := connect(self.connection, self.err)
 
-func (self *ZkMetadataMapper) createVertexZnode(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error {
-	return createElementZnode(graphID, vertexID, partitionID, "vertices")
-}
+	//Marshal and set data for node
+	str, err := json.Marshal(data)
+	if err != nil {
+		fmt.Printf("Error while marshalling data for znode: %s", znodePath)
+		return err
+	}
 
-func (self *ZkMetadataMapper) createEdgeZnode(graphID uuid.UUID, edgeID uuid.UUID, partitionID uuid.UUID) error {
-	return createElementZnode(graphID, vertexID, partitionID, "edges")
+	_, err = conn.Set(znodePath, []byte(str), versionID)
+
+	if err != nil {
+		fmt.Printf("Error while setting znode: %s with data: %s", znodePath, str)
+		return err
+	}
+
+	return nil
 }
 
 func (self *ZkMetadataMapper) createElementZnode(graphID uuid.UUID, elementID uuid.UUID, partitionID uuid.UUID, znodeType string) error {
@@ -77,15 +85,23 @@ func (self *ZkMetadataMapper) createElementZnode(graphID uuid.UUID, elementID uu
 	conn := connect(self.connection, self.err)
 
 	// Set partitionID for element
-	znodePath = path.Join("/graph", graphID.String(), znodeType, elementID)
-	_, err = conn.Set(znodePath, []byte(partitionID.String()), versionID)
+	znodePath := path.Join("/graph", graphID.String(), znodeType, elementID.String())
+	_, err := conn.Set(znodePath, []byte(partitionID.String()), versionID)
 
 	if err != nil {
-		fmt.Printf("Error while setting %s vertex with %s paritionID", vertexID.String(), partitionID.String())
+		fmt.Printf("Error while setting %s vertex with %s paritionID", elementID.String(), partitionID.String())
 		return err
 	}
 
 	return nil
+}
+
+func (self *ZkMetadataMapper) createVertexZnode(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error {
+	return self.createElementZnode(graphID, vertexID, partitionID, "vertices")
+}
+
+func (self *ZkMetadataMapper) createEdgeZnode(graphID uuid.UUID, edgeID uuid.UUID, partitionID uuid.UUID) error {
+	return self.createElementZnode(graphID, edgeID, partitionID, "edges")
 }
 
 func (self *ZkMetadataMapper) getVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) (error, []string) {
@@ -175,7 +191,7 @@ func (self *ZkMetadataMapper) setVertexLocation(graphID uuid.UUID, vertexID uuid
 func (self *ZkMetadataMapper) getEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID) []string {
 	conn := connect(self.connection, self.err)
 
-	znodePath = path.Join("/graph", graphID.String(), "vertices", edgeID)
+	znodePath := path.Join("/graph", graphID.String(), "vertices", edgeID)
 	var data map[string]string
 
 }
