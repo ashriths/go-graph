@@ -1,7 +1,6 @@
 package metadata
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"path"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/samuel/go-zookeeper/zk"
+	"errors"
 )
 
 const (
@@ -71,7 +71,7 @@ func (self *ZkMetadataMapper) setZnodeData(znodePath string, data interface{}) e
 		return err
 	}
 
-	_, err = conn.Set(znodePath, []byte(str), versionID)
+	_, err = conn.Set(znodePath, str, versionID)
 
 	if err != nil {
 		fmt.Printf("Error while setting znode: %s with data: %s", znodePath, str)
@@ -92,16 +92,32 @@ func (self *ZkMetadataMapper) checkZnodeExists(znodePath string) (bool, error) {
 	return exists, nil
 }
 
-func (self *ZkMetadataMapper) createElementZnode(graphID uuid.UUID, elementID uuid.UUID, data uuid.UUID, znodeType string) error {
+func (self *ZkMetadataMapper) createZnode(graphID uuid.UUID, elementID uuid.UUID, data interface{}, znodeType string) error {
 	// Establish connection to zookeeper
 	conn := connect(self.connection, self.err)
 
 	// Set partitionID for element
 	znodePath := path.Join("/graph", graphID.String(), znodeType, elementID.String())
-	_, err := conn.Create(znodePath, []byte(data.String()), )
-
+	exists, err := self.checkZnodeExists(znodePath)
 	if err != nil {
-		fmt.Printf("Error while setting %s vertex with data: %s", elementID.String(), data.String())
+		fmt.Printf("Error trying to check if znode: %s exists", znodePath)
+		return err
+	}
+
+	if exists == true {
+		fmt.Printf("znode %s already exists", znodePath)
+		return errors.New("znode already exists")
+	}
+
+	strdata, err := json.Marshal(data)
+	if err != nil {
+		fmt.Printf("Error while marshalling data for znode: %s", znodePath)
+		return err
+	}
+
+	_, err = conn.Create(znodePath, strdata, 0, zk.WorldACL(zk.PermAll))
+	if err != nil {
+		fmt.Printf("Error while creating znode: %s", znodePath)
 		return err
 	}
 
@@ -109,22 +125,21 @@ func (self *ZkMetadataMapper) createElementZnode(graphID uuid.UUID, elementID uu
 }
 
 func (self *ZkMetadataMapper) createVertexZnode(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error {
-	return self.createElementZnode(graphID, vertexID, partitionID, "vertices")
+
+	data := map[string]string{"partitionID": partitionID.String()}
+	return self.createZnode(graphID, vertexID, data, "vertices")
 }
 
-func (self *ZkMetadataMapper) createEdgeZnode(graphID uuid.UUID, edgeID uuid.UUID, partitionID uuid.UUID) error {
-	return self.createElementZnode(graphID, edgeID, partitionID, "edges")
+func (self *ZkMetadataMapper) createEdgeZnode(graphID uuid.UUID, edgeID uuid.UUID, srcID uuid.UUID) error {
+
+	data := map[string]string{"srcID": srcID.String()}
+	return self.createZnode(graphID, edgeID, data, "edges")
 }
 
 func (self *ZkMetadataMapper) getVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) ([]string, error) {
-	var buffer bytes.Buffer
 	var partitionID string
 	var backendIDs, children []string
 	var err error
-	var dat map[string]interface{}
-
-	// establish connection to zookeeper ensemble
-	conn := connect(self.connection, self.err)
 
 	// get partitionID from graphID and vertexID
 	znodePath := path.Join("/graph", graphID.String(), "vertices", vertexID.String())
@@ -216,7 +231,7 @@ func (self *ZkMetadataMapper) setVertexLocation(graphID uuid.UUID, vertexID uuid
 	//buffer.WriteString(vertexID.String())
 	//exists, _, err = conn.Exists(buffer.String())
 
-	err = self.setZnodeData(znodePath, map[string]string{"partitionID": partitionID.String()}))
+	err = self.setZnodeData(znodePath, map[string]string{"partitionID": partitionID.String()})
 	if err != nil {
 		fmt.Printf("Error while setting %s vertex with %s paritionID", vertexID.String(), partitionID.String())
 		return err
