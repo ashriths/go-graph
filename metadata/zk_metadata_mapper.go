@@ -31,7 +31,7 @@ func (self *ZkMetadataMapper) CreateVertex(graphID uuid.UUID, vertexID uuid.UUID
 	return self.createZnode(graphID, vertexID, data, "vertices")
 }
 
-func (self *ZkMetadataMapper) CreateEdgeZnode(graphID uuid.UUID, edgeID uuid.UUID, srcID uuid.UUID) error {
+func (self *ZkMetadataMapper) CreateEdge(graphID uuid.UUID, edgeID uuid.UUID, srcID uuid.UUID) error {
 	data := map[string]string{"srcID": srcID.String()}
 
 	return self.createZnode(graphID, edgeID, data, "edges")
@@ -133,18 +133,18 @@ func (self *ZkMetadataMapper) SetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUI
 	return nil
 }
 
-func (self *ZkMetadataMapper) AddBackend(backendID uuid.UUID, backendAddr interface{}) error {
+func (self *ZkMetadataMapper) AddBackend(backendAddr string) error {
 	var err error
 	var data []byte
 	conn := connect(self.connection, self.err)
-	znodePath := path.Join("/backends", backendID.String())
+	znodePath := path.Join("/backends")
 	data, err = json.Marshal(backendAddr)
 	if err != nil {
-		fmt.Printf("Error while Marshalling the backendAddr %s", backendAddr.(string))
+		fmt.Printf("Error while Marshalling the backendAddr %s", backendAddr)
 	}
 	_, err = conn.Create(znodePath, data, zk.FlagEphemeral, zk.WorldACL(zk.PermAll))
 	if err != nil {
-		fmt.Printf("Error while creating %s backend node", backendID.String())
+		fmt.Printf("Error while creating %s backend node", backendAddr)
 		return err
 	}
 	return nil

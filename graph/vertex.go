@@ -33,7 +33,7 @@ func (self *Vertex) GetChildVertices(edgeLabels []string) (error, []Vertex) {
 }
 
 func (self *Vertex) String() string{
-	return fmt.Sprintf("<Vertex>{%s}" , self.UUID)
+	return fmt.Sprintf("<Vertex>{%s}" , self.Element.String())
 }
 
 func V(data string) *Vertex{

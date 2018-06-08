@@ -21,5 +21,5 @@ type Metadata interface {
 	//sets the
 	SetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID, partitionID uuid.UUID) error
 	//Method for a backend to add itself to the zookeeper metadata
-	AddBackend(backendID uuid.UUID, backendAddr string) error
+	AddBackend(backendAddr string) error
 }

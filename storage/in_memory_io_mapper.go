@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/ashriths/go-graph/graph"
 	"github.com/ashriths/go-graph/metadata"
@@ -13,7 +12,7 @@ type InMemoryIOMapper struct {
 }
 
 func (InMemoryIOMapper) StoreVertex(vertex *graph.Vertex, uid *uuid.UUID) error {
-	logf(">> Request to Store %s %s\n", vertex, s)
+	logf(">> Request to Store %s\n", vertex)
 	panic("todo")
 }
 
