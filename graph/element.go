@@ -1,6 +1,10 @@
 package graph
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"encoding/json"
+	"github.com/ashriths/go-graph/common"
+)
 
 type ElementInterface interface {
 	GetUUID() uuid.UUID
@@ -39,6 +43,12 @@ func (self *Element) SetProperties(properties interface{}) error  {
 
 func (self *Element) Remove() error {
 	panic("todo")
+}
+
+func (self *Element) String() string {
+	str, e := json.Marshal(self)
+	common.LogError(e)
+	return string(str)
 }
 
 var _ ElementInterface = new(Element)

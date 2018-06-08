@@ -7,18 +7,19 @@ import (
 // Metadata : Interface exposing zookeeper functionality
 type Metadata interface {
 	//creates a Znode for a graph vertex
-	createVertexZnode(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error
+	CreateVertex(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error
 	//creates a Znode for a graph edge
-	createEdgeZnode(graphID uuid.UUID, edgeID uuid.UUID, partitionID uuid.UUID) error
+	CreateEdge(graphID uuid.UUID, edgeID uuid.UUID, partitionID uuid.UUID) error
+
 	//returns the backends that houses a particular vertex
-	getVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) ([]string, error)
+	GetVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) ([]string, error)
 
 	//sets the partition to which a vertex belongs
-	setVertexLocation(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error
+	SetVertexLocation(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error
 	//returns the backend that houses the source vertex of an edge
-	getEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID) ([]string, error)
+	GetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID) ([]string, error)
 	//sets the
-	setEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID, partitionID uuid.UUID) error
+	SetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID, partitionID uuid.UUID) error
 	//Method for a backend to add itself to the zookeeper metadata
-	addBackend(backendID uuid.UUID, backendAddr string) error
+	AddBackend(backendID uuid.UUID, backendAddr string) error
 }

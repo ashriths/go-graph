@@ -12,6 +12,6 @@ func logln(v ...interface{})  {
 
 func logf(format string, v ...interface{})  {
 	if Logging{
-		log.Printf(format, v)
+		log.Printf(format, v...)
 	}
 }

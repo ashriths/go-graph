@@ -1,5 +1,7 @@
 package graph
 
+import "fmt"
+
 type VertexInterface interface {
 	GetInEdges(edgeLabels []string) (error, []Edge)
 	GetOutEdges(edgeLabels []string) (error, []Edge)
@@ -28,6 +30,10 @@ func (self *Vertex) GetParentVertices(edgeLabels []string) (error, []Vertex) {
 
 func (self *Vertex) GetChildVertices(edgeLabels []string) (error, []Vertex) {
 	panic("todo")
+}
+
+func (self *Vertex) String() string{
+	return fmt.Sprintf("<Vertex>{%s}" , self.UUID)
 }
 
 func V(data string) *Vertex{
