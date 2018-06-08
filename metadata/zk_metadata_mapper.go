@@ -1,18 +1,17 @@
 package metadata
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"time"
-
 	"github.com/google/uuid"
-
 	"github.com/samuel/go-zookeeper/zk"
+	"path"
+	"time"
 )
 
 const (
-	versionID = 0
+	versionID = -1
 )
 
 type ZkMetadataMapper struct {
@@ -24,7 +23,7 @@ func must(err error) {
 	if err != nil {
 		panic(err)
 	}
-}P
+}
 
 func connect(connection *zk.Conn, err error) *zk.Conn {
 	Addrs := []string{"169.228.66.172:21810", "169.228.66.170:21810", "169.228.66.171:21810"}
@@ -37,6 +36,56 @@ func connect(connection *zk.Conn, err error) *zk.Conn {
 		must(err)
 	}
 	return connection
+}
+
+func (self *ZkMetadataMapper) getZnodeData(znodePath string) (map[string]interface{}, error) {
+	//Establish connection of zookeeper
+	conn := connect(self.connection, self.err)
+
+	//Fetch and unmarshal data for znode
+	data, _, err = conn.Get(znodePath)
+	if err != nil {
+		fmt.Printf("Error while getting znode at path: %s", znodePath)
+		return make(map[string]interface{}), err
+	}
+
+	var dat map[string]interface{}
+	err = json.Unmarshal(data, &dat)
+	if err != nil {
+		fmt.Printf("Error while unmarshalling data for znode: %s", znodePath)
+		return make(map[string]interface{}), err
+	}
+
+	return dat, nil
+}
+
+func setZnodeData(znodePath string, data interface{}) error {
+	//Establish connection of zookeeper
+	con := connect(self.connection, self.err)
+}
+
+func (self *ZkMetadataMapper) createVertexZnode(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error {
+	return createElementZnode(graphID, vertexID, partitionID, "vertices")
+}
+
+func (self *ZkMetadataMapper) createEdgeZnode(graphID uuid.UUID, edgeID uuid.UUID, partitionID uuid.UUID) error {
+	return createElementZnode(graphID, vertexID, partitionID, "edges")
+}
+
+func (self *ZkMetadataMapper) createElementZnode(graphID uuid.UUID, elementID uuid.UUID, partitionID uuid.UUID, znodeType string) error {
+	// Establish connection to zookeeper
+	conn := connect(self.connection, self.err)
+
+	// Set partitionID for element
+	znodePath = path.Join("/graph", graphID.String(), znodeType, elementID)
+	_, err = conn.Set(znodePath, []byte(partitionID.String()), versionID)
+
+	if err != nil {
+		fmt.Printf("Error while setting %s vertex with %s paritionID", vertexID.String(), partitionID.String())
+		return err
+	}
+
+	return nil
 }
 
 func (self *ZkMetadataMapper) getVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) (error, []string) {
@@ -79,9 +128,9 @@ func (self *ZkMetadataMapper) getVertexLocation(graphID uuid.UUID, vertexID uuid
 		return err, nil
 	}
 
-	backendIDs = append([]string{dat["Primary"]},dat["Secondaries"])
-	
-	for _,backend_id := range backendIDs {
+	backendIDs = append([]string{dat["Primary"]}, dat["Secondaries"])
+
+	for _, backend_id := range backendIDs {
 		buffer.Reset()
 		buffer.WriteString("/backends")
 		buffer.WriteString("/")
@@ -123,8 +172,12 @@ func (self *ZkMetadataMapper) setVertexLocation(graphID uuid.UUID, vertexID uuid
 	return nil
 }
 
-func (self *ZkMetadataMapper) getEdgeLocation(nodeID uuid.UUID, backend string) []string {
+func (self *ZkMetadataMapper) getEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID) []string {
 	conn := connect(self.connection, self.err)
+
+	znodePath = path.Join("/graph", graphID.String(), "vertices", edgeID)
+	var data map[string]string
+
 }
 func (self *ZkMetadataMapper) setEdgeLocation(nodeID uuid.UUID, backend string) {
 	conn := connect(self.connection, self.err)

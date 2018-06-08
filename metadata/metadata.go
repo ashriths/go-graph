@@ -9,7 +9,7 @@ type Metadata interface {
 	//creates a Znode for a graph vertex
 	createVertexZnode(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error
 	//creates a Znode for a graph edge
-	createEdgeZnode(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error
+	createEdgeZnode(graphID uuid.UUID, edgeID uuid.UUID, partitionID uuid.UUID) error
 	//Method to create a Znode
 	getVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) (error, []string)
 	//Method to create a Znode
