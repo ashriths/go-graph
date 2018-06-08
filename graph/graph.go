@@ -57,4 +57,3 @@ func (self *GoGraph) AddEdge(src Vertex, dest Vertex, properties interface{}) (e
 }
 
 var _ Graph = new(GoGraph)
-

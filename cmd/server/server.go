@@ -1,9 +1,9 @@
-package server
+package main
 
 import (
 	"flag"
-	"go-graph/system"
-	"go-graph/server"
+	"github.com/ashriths/go-graph/system"
+	"github.com/ashriths/go-graph/server"
 )
 
 var (

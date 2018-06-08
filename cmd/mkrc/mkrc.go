@@ -1,11 +1,11 @@
-package mkrc
+package main
 
 import (
 	"flag"
 	"fmt"
 	"log"
-	"go-graph/system"
 	"github.com/ashriths/go-graph/cmd"
+	"github.com/ashriths/go-graph/system"
 )
 
 // For now, we assume that we have sequentially-IP'd hosts that don't span more

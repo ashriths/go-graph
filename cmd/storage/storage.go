@@ -1,23 +1,27 @@
-package storage
+package main
 
 import (
 	"flag"
-	"go-graph/system"
 	"net/rpc"
 	"fmt"
 	"net"
 	"net/http"
-	"go-graph/storage"
+	"github.com/ashriths/go-graph/storage"
+	"log"
+	"github.com/ashriths/go-graph/common"
+	"github.com/ashriths/go-graph/cmd"
+	"github.com/ashriths/go-graph/local"
 )
 
 var (
 	storageAddr = flag.String("addr", "localhost:rand", "storage listen address")
 	store = flag.String("store", "memory", "storage data location")
+	frc = flag.String("rc", cmd.DefaultRCPath, "config file")
 )
 
 func ServeStorage(storageConfig *storage.StorageConfig) error{
-	server := rpc.NewServer()
-	e := server.Register(storageConfig.Store)
+	rpcServer := rpc.NewServer()
+	e := rpcServer.Register(storageConfig.Store)
 	if e != nil {
 		fmt.Println(e)
 		if storageConfig.Ready != nil {
@@ -26,7 +30,7 @@ func ServeStorage(storageConfig *storage.StorageConfig) error{
 		return e
 	}
 	//rpc.HandleHTTP()
-
+	log.Println("Registered store")
 	l, e := net.Listen("tcp", storageConfig.Addr)
 	if e != nil {
 		fmt.Println(e)
@@ -35,12 +39,13 @@ func ServeStorage(storageConfig *storage.StorageConfig) error{
 		}
 		return e
 	}
+	log.Println("Listener configured")
 
 	if storageConfig.Ready != nil {
 		storageConfig.Ready <- true
 	}
-
-	return http.Serve(l, server)
+	log.Println("Storage RPC server started on ", storageConfig.Addr)
+	return http.Serve(l, rpcServer)
 }
 
 func GetStore(storeType string)  storage.IOMapper{
@@ -51,13 +56,38 @@ func GetStore(storeType string)  storage.IOMapper{
 	panic("Invalid StoreType")
 }
 
+
+
 func main() {
 	flag.Parse()
-	address := system.Resolve(*storageAddr)
-	conf := &storage.StorageConfig{
-		Store: GetStore(*store),
-		Addr: address,
-		Ready: make(chan bool),
+	args := flag.Args()
+
+	n := 0
+	if len(args) == 0 {
+		rc, e := cmd.LoadRC(*frc)
+		common.NoError(e)
+		run := func(i int) {
+			if i > len(rc.Storage) {
+				common.NoError(fmt.Errorf("back-end index out of range: %d", i))
+			}
+
+			backConfig := rc.StorageConfig(i, GetStore(*store))
+
+			log.Printf("bin storage back-end serving on %s", backConfig.Addr)
+			common.NoError(ServeStorage(backConfig))
+		}
+
+		for i, b := range rc.Storage {
+
+			if local.Check(b) {
+				log.Println(i,b)
+				go run(i)
+				n++
+			}
+		}
 	}
-	ServeStorage(conf)
+
+	if n > 0 {
+		select {}
+	}
 }

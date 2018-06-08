@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"github.com/ashriths/go-graph/storage"
 )
 
 var DefaultRCPath = "conf.rc"
@@ -18,10 +19,17 @@ type BackAddr struct {
 	Peer  string
 }
 
-func (self *RC) BackCount() int {
+func (self *RC) StorageCount() int {
 	return len(self.Storage)
 }
 
+func (self *RC) StorageConfig(i int, s storage.IOMapper) *storage.StorageConfig {
+	ret := new(storage.StorageConfig)
+	ret.Addr = self.Storage[i]
+	ret.Store = s
+	ret.Ready = make(chan bool, 1)
+	return ret
+}
 
 
 func LoadRC(p string) (*RC, error) {

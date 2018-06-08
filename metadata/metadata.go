@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"github.com/google/uuid"
+	"github.com/ashriths/go-graph/storage"
 )
 
 // Metadata : Interface exposing zookeeper functionality

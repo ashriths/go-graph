@@ -1,0 +1,8 @@
+{
+    "Storage": [
+        "localhost:18013"
+    ],
+    "MetadataServers": [
+        "localhost:18014"
+    ]
+}

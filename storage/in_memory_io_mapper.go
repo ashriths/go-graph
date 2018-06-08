@@ -1,9 +1,36 @@
 package storage
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/ashriths/go-graph/graph"
+)
 
 type InMemoryIOMapper struct {
 	Memory *MemStorage
+}
+
+func (InMemoryIOMapper) StoreVertex(vertex *graph.Vertex, uuid *uuid.UUID) error {
+	panic("implement me")
+}
+
+func (InMemoryIOMapper) StoreEdge(edge *graph.Edge, uuid *uuid.UUID) error {
+	panic("implement me")
+}
+
+func (InMemoryIOMapper) UpdateProperties(element *graph.Element, success *bool) error {
+	panic("implement me")
+}
+
+func (InMemoryIOMapper) GetElementProperties(elementId uuid.UUID, properties *interface{}) error {
+	panic("implement me")
+}
+
+func (InMemoryIOMapper) RemoveVertex(vertex uuid.UUID, succ *bool) error {
+	panic("implement me")
+}
+
+func (InMemoryIOMapper) RemoveEdge(edge uuid.UUID, succ *bool) error {
+	panic("implement me")
 }
 
 func NewInMemoryIOMapper() *InMemoryIOMapper {
@@ -12,37 +39,7 @@ func NewInMemoryIOMapper() *InMemoryIOMapper {
 	}
 }
 
-func (self *InMemoryIOMapper) StoreVertex(properties interface{}) (error, uuid.UUID) {
-	panic("implement me")
-}
 
-func (self *InMemoryIOMapper) StoreEdge(srcVertex uuid.UUID, destVertex uuid.UUID, properties interface{}) (error, uuid.UUID) {
-	panic("implement me")
-}
-
-func (self *InMemoryIOMapper) UpdateProperties(elementId uuid.UUID, properties interface{}) error {
-	panic("implement me")
-}
-
-func (self *InMemoryIOMapper) UpdatePropertyByName(elementId uuid.UUID, key string, value string) error {
-	panic("implement me")
-}
-
-func (self *InMemoryIOMapper) GetElementProperties(elementId uuid.UUID) (error, interface{}) {
-	panic("implement me")
-}
-
-func (self *InMemoryIOMapper) GetElementPropertyByName(elementId uuid.UUID, key string) (error, interface{}) {
-	panic("implement me")
-}
-
-func (self *InMemoryIOMapper) RemoveVertex(vertex uuid.UUID) error {
-	panic("implement me")
-}
-
-func (self *InMemoryIOMapper) RemoveEdge(edge uuid.UUID) error {
-	panic("implement me")
-}
 
 var _ IOMapper = new(InMemoryIOMapper)
  
