@@ -2,7 +2,6 @@ package metadata
 
 import (
 	"github.com/google/uuid"
-	"github.com/ashriths/go-graph/storage"
 )
 
 // Metadata : Interface exposing zookeeper functionality
@@ -13,6 +12,7 @@ type Metadata interface {
 	createEdgeZnode(graphID uuid.UUID, edgeID uuid.UUID, partitionID uuid.UUID) error
 	//returns the backends that houses a particular vertex
 	getVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) ([]string, error)
+
 	//sets the partition to which a vertex belongs
 	setVertexLocation(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error
 	//returns the backend that houses the source vertex of an edge

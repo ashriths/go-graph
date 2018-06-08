@@ -9,11 +9,15 @@ type InMemoryIOMapper struct {
 	Memory *MemStorage
 }
 
-func (InMemoryIOMapper) StoreVertex(vertex *graph.Vertex, uuid *uuid.UUID) error {
-	panic("implement me")
+func (InMemoryIOMapper) StoreVertex(vertex *graph.Vertex, uid *uuid.UUID) error {
+	logln(vertex)
+	var u uuid.UUID
+	u, e := uuid.NewUUID()
+	*uid = u
+	return e
 }
 
-func (InMemoryIOMapper) StoreEdge(edge *graph.Edge, uuid *uuid.UUID) error {
+func (InMemoryIOMapper) StoreEdge(edge *graph.Edge, uid *uuid.UUID) error {
 	panic("implement me")
 }
 

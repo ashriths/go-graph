@@ -6,8 +6,6 @@ import (
 	"log"
 )
 
-var Logging bool
-
 type MemStorage struct {
 	clock     uint64
 	data      map[string]string

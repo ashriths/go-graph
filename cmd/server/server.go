@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"github.com/ashriths/go-graph/system"
-	"github.com/ashriths/go-graph/server"
 )
 
 var (
@@ -15,7 +14,5 @@ func main() {
 
 	*serverAddr = system.Resolve(*serverAddr)
 	panic("Todo")
-	server.NewServer(&server.ServerConfig{
-		Addr: *serverAddr,
-	})
+
 }

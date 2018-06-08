@@ -25,6 +25,10 @@ type ZkMetadataMapper struct {
 	err        error
 }
 
+func (self *ZkMetadataMapper) addBackend(backendID uuid.UUID, backendAddr string) error {
+	panic("implement me")
+}
+
 func must(err error) {
 	if err != nil {
 		panic(err)
