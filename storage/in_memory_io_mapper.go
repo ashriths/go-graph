@@ -9,7 +9,7 @@ type InMemoryIOMapper struct {
 	Memory *MemStorage
 }
 
-func (InMemoryIOMapper) StoreVertex(vertex *graph.Vertex, uuid *uuid.UUID) error {
+func (InMemoryIOMapper) StoreVertex(vertex graph.Vertex, uuid *uuid.UUID) error {
 	panic("implement me")
 }
 

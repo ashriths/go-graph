@@ -8,7 +8,7 @@ type Vertex interface {
 }
 
 type GoGraphVertex struct {
-	Element
+	GoGraphElement
 	OutEdges   []Edge
 	InEdges    []Edge
 }
@@ -28,6 +28,18 @@ func (self *GoGraphVertex) GetParentVertices(edgeLabels []string) (error, []Vert
 
 func (self *GoGraphVertex) GetChildVertices(edgeLabels []string) (error, []Vertex) {
 	panic("todo")
+}
+
+func V(data string) *GoGraphVertex{
+	return &GoGraphVertex{
+		GoGraphElement: GoGraphElement{
+			Label:data,
+			UUID:nil,
+			Properties:nil,
+		},
+		OutEdges:nil,
+		InEdges:nil,
+	}
 }
 
 var _ Vertex = new(GoGraphVertex)

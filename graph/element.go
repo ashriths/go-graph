@@ -12,13 +12,13 @@ type Element interface {
 }
 
 type GoGraphElement struct {
-	UUID  uuid.UUID
+	UUID  *uuid.UUID
 	Label string
 	Properties interface{}
 }
 
 func (self *GoGraphElement) GetUUID() uuid.UUID {
-	return self.UUID
+	return *self.UUID
 }
 
 func (self *GoGraphElement) GetLabel() (error, string) {
