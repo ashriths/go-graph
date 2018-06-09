@@ -17,7 +17,8 @@ const (
 	typeBACKEND   = "backends"
 	typeGRAPH     = "graph"
 	typePARTITION = "partitions"
-	typeVERTICES  = "vertices"
+	typeVERTEX    = "vertices"
+	typeEDGE      = "edges"
 )
 
 type ZkMetadataMapper struct {
@@ -25,16 +26,66 @@ type ZkMetadataMapper struct {
 	err        error
 }
 
+func (self *ZkMetadataMapper) CreatePartition(graphID uuid.UUID, partitionID uuid.UUID) error {
+	data := map[string]string{"partitionID": partitionID.String()}
+	return self.createZnode(path.Join("", graphID.String(), typePARTITION, partitionID.String()), data)
+}
+
 func (self *ZkMetadataMapper) CreateVertex(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error {
 	data := map[string]string{"partitionID": partitionID.String()}
-
-	return self.createZnode(graphID, vertexID, data, "vertices")
+	return self.createZnode(path.Join("", graphID.String(), typeVERTEX, vertexID.String()), data)
 }
 
 func (self *ZkMetadataMapper) CreateEdge(graphID uuid.UUID, edgeID uuid.UUID, srcID uuid.UUID) error {
 	data := map[string]string{"srcID": srcID.String()}
+	return self.createZnode(path.Join("", graphID.String(), typeEDGE, edgeID.String()), data)
+}
 
-	return self.createZnode(graphID, edgeID, data, "edges")
+func (self *ZkMetadataMapper) CreateBackend(backendAddr string) (string, error) {
+	var err error
+	var data []byte
+	var backendID string
+	conn := connect(self.connection, self.err)
+	znodePath := path.Join("", typeBACKEND)
+	data, err = json.Marshal(backendAddr)
+	if err != nil {
+		fmt.Printf("Error while Marshalling the backendAddr %s", backendAddr)
+		return backendID, err
+	}
+	backendID, err = conn.CreateProtectedEphemeralSequential(znodePath, data, zk.WorldACL(zk.PermAll))
+	if err != nil {
+		fmt.Printf("Error while creating %s backend node", backendAddr)
+		return backendID, err
+	}
+	return backendID, nil
+}
+
+func (self *ZkMetadataMapper) AddBackendToPartition(graphID uuid.UUID, partitionID uuid.UUID, backendID string) ([]string, <-chan zk.Event, error) {
+	var err error
+	var liveBackends []string
+	watch := make(<-chan zk.Event)
+	err = self.createZnode(path.Join("", graphID.String(), typePARTITION, partitionID.String(), backendID), "")
+	if err != nil {
+		fmt.Printf("Error while adding %s backend to %s partition", backendID, partitionID.String())
+		return nil, nil, err
+	}
+	backendNode := path.Join("", graphID.String(), partitionID.String())
+
+	// pass the full path upto node whose children have to be watched
+	liveBackends, watch, err = self.GetWatchOnChildren(backendNode)
+	if err != nil {
+		fmt.Printf("Error while setting a watch on %s", backendID)
+		return nil, watch, err
+	}
+	return liveBackends, watch, err
+}
+
+// @param : backendNode - full path of node whose children need to be watched
+// @return : list of all alive children,
+func (self *ZkMetadataMapper) GetWatchOnChildren(backendNode string) ([]string, <-chan zk.Event, error) {
+	conn := connect(self.connection, self.err)
+	snapshot, _, watch, err := conn.ChildrenW(backendNode)
+	return snapshot, watch, err
 }
 
 func must(err error) {
@@ -49,7 +100,7 @@ func (self *ZkMetadataMapper) GetVertexLocation(graphID uuid.UUID, vertexID uuid
 	var err error
 
 	// get partitionID from graphID and vertexID
-	znodePath := path.Join("", typeGRAPH, graphID.String(), "vertices", vertexID.String())
+	znodePath := path.Join("", typeGRAPH, graphID.String(), typeVERTEX, vertexID.String())
 	data, err := self.getZnodeData(znodePath)
 	if err != nil {
 		fmt.Printf("Error while getting %s vertex", vertexID.String())
@@ -87,7 +138,7 @@ func (self *ZkMetadataMapper) SetVertexLocation(graphID uuid.UUID, vertexID uuid
 	var exists bool
 	var err error
 
-	znodePath := path.Join("", typeGRAPH, graphID.String(), "vertices", vertexID.String())
+	znodePath := path.Join("", typeGRAPH, graphID.String(), typeVERTEX, vertexID.String())
 	exists, err = self.checkZnodeExists(znodePath)
 	if err != nil {
 		fmt.Printf("Error while checking if %s vertex exists", vertexID.String())
@@ -107,7 +158,7 @@ func (self *ZkMetadataMapper) SetVertexLocation(graphID uuid.UUID, vertexID uuid
 }
 
 func (self *ZkMetadataMapper) GetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID) ([]string, error) {
-	znodePath := path.Join("", typeGRAPH, graphID.String(), "edges", edgeID.String())
+	znodePath := path.Join("", typeGRAPH, graphID.String(), typeEDGE, edgeID.String())
 	data, err := self.getZnodeData(znodePath)
 	if err != nil {
 		fmt.Printf("Failed to fetch data for znode: %s", znodePath)
@@ -123,30 +174,13 @@ func (self *ZkMetadataMapper) GetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUI
 	return self.GetVertexLocation(graphID, srcID)
 }
 func (self *ZkMetadataMapper) SetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID, srcID uuid.UUID) error {
-	znodePath := path.Join("", typeGRAPH, graphID.String(), "edges", edgeID.String())
+	znodePath := path.Join("", typeGRAPH, graphID.String(), typeEDGE, edgeID.String())
 	err := self.setZnodeData(znodePath, map[string]string{"srcID": srcID.String()})
 	if err != nil {
 		fmt.Printf("Failed to set data for znode: %s", znodePath)
 		return err
 	}
 
-	return nil
-}
-
-func (self *ZkMetadataMapper) AddBackend(backendAddr string) error {
-	var err error
-	var data []byte
-	conn := connect(self.connection, self.err)
-	znodePath := path.Join("/backends")
-	data, err = json.Marshal(backendAddr)
-	if err != nil {
-		fmt.Printf("Error while Marshalling the backendAddr %s", backendAddr)
-	}
-	_, err = conn.Create(znodePath, data, zk.FlagEphemeral, zk.WorldACL(zk.PermAll))
-	if err != nil {
-		fmt.Printf("Error while creating %s backend node", backendAddr)
-		return err
-	}
 	return nil
 }
 
@@ -216,12 +250,12 @@ func (self *ZkMetadataMapper) checkZnodeExists(znodePath string) (bool, error) {
 	return exists, nil
 }
 
-func (self *ZkMetadataMapper) createZnode(graphID uuid.UUID, elementID uuid.UUID, data interface{}, znodeType string) error {
+func (self *ZkMetadataMapper) createZnode(znodePath string, data interface{}) error {
 	// Establish connection to zookeeper
 	conn := connect(self.connection, self.err)
 
 	// Set partitionID for element
-	znodePath := path.Join("", typeGRAPH, graphID.String(), znodeType, elementID.String())
+	//znodePath := path.Join("", typeGRAPH, graphID.String(), znodeType, elementID.String())
 	exists, err := self.checkZnodeExists(znodePath)
 	if err != nil {
 		fmt.Printf("Error trying to check if znode: %s exists", znodePath)
@@ -246,12 +280,6 @@ func (self *ZkMetadataMapper) createZnode(graphID uuid.UUID, elementID uuid.UUID
 	}
 
 	return nil
-}
-
-func (self *ZkMetadataMapper) createPartitionZnode(graphID uuid.UUID, partitionID uuid.UUID, primaryAddr string, secondaryAddr []string) error {
-
-	data := map[string]interface{}{"Primary": primaryAddr, "Secondaries": secondaryAddr}
-	return self.createZnode(graphID, partitionID, data, typePARTITION)
 }
 
 var _ Metadata = new(ZkMetadataMapper)
