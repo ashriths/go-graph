@@ -23,7 +23,12 @@ const (
 
 type ZkMetadataMapper struct {
 	connection *zk.Conn
+	ZkAddrs     []string
 	err        error
+}
+
+func (self *ZkMetadataMapper) initializeStructure() {
+	panic("todo")
 }
 
 func (self *ZkMetadataMapper) CreatePartition(graphID uuid.UUID, partitionID uuid.UUID) error {
@@ -45,7 +50,7 @@ func (self *ZkMetadataMapper) CreateBackend(backendAddr string) (string, error) 
 	var err error
 	var data []byte
 	var backendID string
-	conn := connect(self.connection, self.err)
+	conn := self.connect(self.connection, self.err)
 	znodePath := path.Join("", typeBACKEND)
 	data, err = json.Marshal(backendAddr)
 	if err != nil {
@@ -83,7 +88,7 @@ func (self *ZkMetadataMapper) AddBackendToPartition(graphID uuid.UUID, partition
 // @param : backendNode - full path of node whose children need to be watched
 // @return : list of all alive children,
 func (self *ZkMetadataMapper) GetWatchOnChildren(backendNode string) ([]string, <-chan zk.Event, error) {
-	conn := connect(self.connection, self.err)
+	conn := self.connect(self.connection, self.err)
 	snapshot, _, watch, err := conn.ChildrenW(backendNode)
 	return snapshot, watch, err
 }
@@ -184,8 +189,9 @@ func (self *ZkMetadataMapper) SetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUI
 	return nil
 }
 
-func connect(connection *zk.Conn, err error) *zk.Conn {
-	Addrs := []string{"169.228.66.172:21810", "169.228.66.170:21810", "169.228.66.171:21810"}
+func (self *ZkMetadataMapper) connect(connection *zk.Conn, err error) *zk.Conn {
+	//Addrs := []string{"169.228.66.172:21810", "169.228.66.170:21810", "169.228.66.171:21810"}
+	Addrs := self.ZkAddrs
 	if connection == nil { // If no connection currently exists
 		connection, _, err = zk.Connect(Addrs, time.Second)
 		must(err)
@@ -199,7 +205,7 @@ func connect(connection *zk.Conn, err error) *zk.Conn {
 
 func (self *ZkMetadataMapper) getZnodeData(znodePath string) (map[string]interface{}, error) {
 	//Establish connection of zookeeper
-	conn := connect(self.connection, self.err)
+	conn := self.connect(self.connection, self.err)
 
 	//Fetch and unmarshal data for znode
 	data, _, err := conn.Get(znodePath)
@@ -220,7 +226,7 @@ func (self *ZkMetadataMapper) getZnodeData(znodePath string) (map[string]interfa
 
 func (self *ZkMetadataMapper) setZnodeData(znodePath string, data interface{}) error {
 	//Establish connection of zookeeper
-	conn := connect(self.connection, self.err)
+	conn := self.connect(self.connection, self.err)
 
 	//Marshal and set data for node
 	str, err := json.Marshal(data)
@@ -240,7 +246,7 @@ func (self *ZkMetadataMapper) setZnodeData(znodePath string, data interface{}) e
 }
 
 func (self *ZkMetadataMapper) checkZnodeExists(znodePath string) (bool, error) {
-	conn := connect(self.connection, self.err)
+	conn := self.connect(self.connection, self.err)
 
 	exists, _, err := conn.Exists(znodePath)
 	if err != nil {
@@ -252,7 +258,7 @@ func (self *ZkMetadataMapper) checkZnodeExists(znodePath string) (bool, error) {
 
 func (self *ZkMetadataMapper) createZnode(znodePath string, data interface{}) error {
 	// Establish connection to zookeeper
-	conn := connect(self.connection, self.err)
+	conn := self.connect(self.connection, self.err)
 
 	// Set partitionID for element
 	//znodePath := path.Join("", typeGRAPH, graphID.String(), znodeType, elementID.String())
