@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"github.com/ashriths/go-graph/cmd"
 	"github.com/ashriths/go-graph/system"
+	"log"
 )
 
 // For now, we assume that we have sequentially-IP'd hosts that don't span more
@@ -15,12 +15,12 @@ const FIRST_IP = 166
 const NUM_HOSTS = 10
 
 var (
-	local   = flag.Bool("local", false, "always use local ports")
+	local     = flag.Bool("local", false, "always use local ports")
 	nserver   = flag.Int("nserver", 1, "number of back ends servers")
-	nmetadata   = flag.Int("nmetadata", 1, "number of metadata backends")
-	full    = flag.Bool("full", false, "setup of 10 back-ends and 3 keepers")
-	fixPort = flag.Bool("fix", false, "fix port numbers; don't use random ones")
-	file     = flag.String("file", cmd.DefaultRCPath, "config file path")
+	nmetadata = flag.Int("nmetadata", 1, "number of metadata backends")
+	full      = flag.Bool("full", false, "setup of 10 back-ends and 3 keepers")
+	fixPort   = flag.Bool("fix", false, "fix port numbers; don't use random ones")
+	file      = flag.String("file", cmd.DefaultRCPath, "config file path")
 )
 
 func main() {

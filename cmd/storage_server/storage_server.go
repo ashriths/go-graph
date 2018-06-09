@@ -3,20 +3,21 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/ashriths/go-graph/storage"
-	"log"
-	"github.com/ashriths/go-graph/common"
 	"github.com/ashriths/go-graph/cmd"
+	"github.com/ashriths/go-graph/common"
 	"github.com/ashriths/go-graph/local"
+	"github.com/ashriths/go-graph/storage"
+	"github.com/ashriths/go-graph/system"
+	"log"
 )
 
 var (
 	storageAddr = flag.String("addr", "localhost:rand", "storage_server listen address")
-	store = flag.String("store", "memory", "storage_server data location")
-	frc = flag.String("rc", cmd.DefaultRCPath, "config file")
+	store       = flag.String("store", "memory", "storage_server data location")
+	frc         = flag.String("rc", cmd.DefaultRCPath, "config file")
 )
 
-func GetStore(storeType string)  storage.IOMapper{
+func GetStore(storeType string) storage.IOMapper {
 	switch storeType {
 	case "memory":
 		return storage.NewInMemoryIOMapper()
@@ -24,12 +25,10 @@ func GetStore(storeType string)  storage.IOMapper{
 	panic("Invalid StoreType")
 }
 
-
-
 func main() {
 	flag.Parse()
 	args := flag.Args()
-	storage.Logging = true
+	system.Logging = true
 	n := 0
 	if len(args) == 0 {
 		rc, e := cmd.LoadRC(*frc)
@@ -48,7 +47,7 @@ func main() {
 		for i, b := range rc.Storage {
 
 			if local.Check(b) {
-				log.Println(i,b)
+				log.Println(i, b)
 				go run(i)
 				n++
 			}

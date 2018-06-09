@@ -3,14 +3,14 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"github.com/ashriths/go-graph/storage"
+	"os"
 )
 
 var DefaultRCPath = "conf.rc"
 
 type RC struct {
-	Storage   []string
+	Storage         []string
 	MetadataServers []string
 }
 
@@ -30,7 +30,6 @@ func (self *RC) StorageConfig(i int, s storage.IOMapper) *storage.StorageConfig 
 	ret.Ready = make(chan bool, 1)
 	return ret
 }
-
 
 func LoadRC(p string) (*RC, error) {
 	fin, e := os.Open(p)

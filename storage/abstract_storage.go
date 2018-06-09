@@ -1,15 +1,7 @@
 package storage
 
+import "github.com/ashriths/go-graph/graph"
+
 type Storage interface {
-	Clock(atLeast uint64) (error, uint64)
-	Get(key string) (error, string)
-	Set(key string, value string) error
-	Keys(p Pattern) (error, []string)
+	StoreElement(element graph.ElementInterface) error
 }
-
-type StorageConfig struct {
-	Addr string
-	Ready chan<- bool
-	Store IOMapper
-}
-

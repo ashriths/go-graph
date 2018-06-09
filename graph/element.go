@@ -1,43 +1,41 @@
 package graph
 
 import (
-	"github.com/google/uuid"
 	"encoding/json"
 	"github.com/ashriths/go-graph/common"
+	"github.com/google/uuid"
 )
+
+type ElementProperty map[string]string
 
 type ElementInterface interface {
 	GetUUID() uuid.UUID
-	GetLabel() (error, string)
 	Graph() (error, Graph)
-	GetProperties() (error, interface{})
-	SetProperties(props interface{}) error
+	GetProperties() (error, ElementProperty)
+	SetProperties(props ElementProperty) error
 	Remove() error
+
+	Json() string
 }
 
 type Element struct {
-	UUID  *uuid.UUID
-	Label string
-	Properties interface{}
+	UUID       uuid.UUID
+	Properties ElementProperty
 }
 
 func (self *Element) GetUUID() uuid.UUID {
-	return *self.UUID
-}
-
-func (self *Element) GetLabel() (error, string) {
-	return nil, self.Label
+	return self.UUID
 }
 
 func (self *Element) Graph() (error, Graph) {
 	panic("todo")
 }
 
-func (self *Element) GetProperties() (error, interface{})  {
+func (self *Element) GetProperties() (error, ElementProperty) {
 	panic("todo")
 }
 
-func (self *Element) SetProperties(properties interface{}) error  {
+func (self *Element) SetProperties(properties ElementProperty) error {
 	panic("todo")
 }
 
@@ -50,5 +48,19 @@ func (self *Element) String() string {
 	common.LogError(e)
 	return string(str)
 }
+
+func (self *Element) Json() string {
+	str, e := json.Marshal(self)
+	common.LogError(e)
+	return string(str)
+}
+
+//func ElementFactory(elemType string, data interface{}) (interface{}, error){
+//	switch elemType {
+//	case VERTEX_PREFIX:
+//		return new(Vertex(data))
+//
+//	}
+//}
 
 var _ ElementInterface = new(Element)

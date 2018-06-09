@@ -8,8 +8,8 @@ func NoError(e error) {
 	}
 }
 
-func LogError(e error){
-	if e != nil{
+func LogError(e error) {
+	if e != nil {
 		log.Println(e)
 	}
 }

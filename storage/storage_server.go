@@ -1,14 +1,14 @@
 package storage
 
 import (
-	"net/rpc"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"net/rpc"
 )
 
-func ServeStorage(storageConfig *StorageConfig) error{
+func ServeStorage(storageConfig *StorageConfig) error {
 	rpcServer := rpc.NewServer()
 	e := rpcServer.RegisterName("Storage", storageConfig.Store)
 	if e != nil {

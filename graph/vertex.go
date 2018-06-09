@@ -1,8 +1,12 @@
 package graph
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/google/uuid"
+)
 
 type VertexInterface interface {
+	ElementInterface
 	GetInEdges(edgeLabels []string) (error, []Edge)
 	GetOutEdges(edgeLabels []string) (error, []Edge)
 	GetParentVertices(edgeLabels []string) (error, []Vertex)
@@ -11,16 +15,15 @@ type VertexInterface interface {
 
 type Vertex struct {
 	Element
-	OutEdges   []Edge
-	InEdges    []Edge
+	OutEdges []Edge
+	InEdges  []Edge
 }
-
 
 func (self *Vertex) GetInEdges(edgeLabels []string) (error, []Edge) {
 	panic("todo")
 }
 
-func (self *Vertex) GetOutEdges(edgeLabels []string) (error,[]Edge) {
+func (self *Vertex) GetOutEdges(edgeLabels []string) (error, []Edge) {
 	panic("todo")
 }
 
@@ -32,19 +35,27 @@ func (self *Vertex) GetChildVertices(edgeLabels []string) (error, []Vertex) {
 	panic("todo")
 }
 
-func (self *Vertex) String() string{
-	return fmt.Sprintf("<Vertex>{%s}" , self.Element.String())
+func (self *Vertex) String() string {
+	return fmt.Sprintf("<Vertex:%s>%s ", self.GetUUID(), self.Element.String())
 }
 
-func V(data string) *Vertex{
+func V(uuid uuid.UUID, property ElementProperty) *Vertex {
 	return &Vertex{
 		Element: Element{
-			Label:data,
-			UUID:nil,
-			Properties:nil,
+			UUID:       uuid,
+			Properties: property,
 		},
-		OutEdges:nil,
-		InEdges:nil,
+	}
+}
+
+func E(uid uuid.UUID, src uuid.UUID, dest uuid.UUID, property ElementProperty) *Edge {
+	return &Edge{
+		SrcVertex:  src,
+		DestVertex: dest,
+		Element: Element{
+			UUID:       uid,
+			Properties: property,
+		},
 	}
 }
 
