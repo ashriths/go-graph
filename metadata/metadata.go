@@ -33,6 +33,12 @@ type Metadata interface {
 	GetAllBackends() ([]string, error)
 	//returns backend information
 	GetBackendInformation(backendID string) (map[string]interface{}, error)
+	//returns all partitions of a graph
+	GetAllPartitions(graphID uuid.UUID) ([]string, error)
+	//sets the data at a partition Znode
+	SetPartitionInformation(graphID uuid.UUID, partitionID uuid.UUID, data interface{}) error
+	//returns the data at a partition Znode
+	GetPartitionInformation(graphID uuid.UUID, partitionID uuid.UUID) (map[string]interface{}, error)
 
 	//adds a backend to a partition
 	AddBackendToPartition(graphID uuid.UUID, partitionID uuid.UUID, backendID string) ([]string, <-chan zk.Event, error)

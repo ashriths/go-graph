@@ -69,7 +69,8 @@ func (self *ZkMetadataMapper) CreateBackend(backendAddr string) (string, error) 
 	var backendID string
 	conn := self.connect(self.connection, self.err)
 	znodePath := path.Join("", typeBACKEND)
-	data, err = json.Marshal(backendAddr)
+	dataMap := map[string]string{"address": backendAddr}
+	data, err = json.Marshal(dataMap)
 	if err != nil {
 		fmt.Printf("Error while Marshalling the backendAddr %s", backendAddr)
 		return backendID, err
@@ -114,6 +115,47 @@ func (self *ZkMetadataMapper) GetAllBackends() ([]string, error) {
 		return nil, err
 	}
 	return children, nil
+}
+
+func (self *ZkMetadataMapper) GetAllPartitions(graphID uuid.UUID) ([]string, error) {
+	children, err := self.getChildren(path.Join("", typeGRAPH, graphID.String()))
+	if err != nil {
+		fmt.Printf("Error while getting all partitions of %s graph", graphID.String())
+		return nil, err
+	}
+	return children, nil
+}
+
+func (self *ZkMetadataMapper) GetPartitionInformation(graphID uuid.UUID, partitionID uuid.UUID) (map[string]interface{}, error) {
+	data, err := self.getZnodeData(path.Join("", typeGRAPH, graphID.String(), typePARTITION, partitionID.String()))
+	if err != nil {
+		fmt.Printf("Error while retrieving data stored at %s partition", partitionID.String())
+		return nil, err
+	}
+	return data, nil
+}
+
+func (self *ZkMetadataMapper) SetPartitionInformation(graphID uuid.UUID, partitionID uuid.UUID, data interface{}) error {
+	var exists bool
+	var err error
+
+	znodePath := path.Join("", typeGRAPH, graphID.String(), typePARTITION, partitionID.String())
+	exists, err = self.checkZnodeExists(znodePath)
+	if err != nil {
+		fmt.Printf("Error while checking if %s partition exists", partitionID.String())
+		return err
+	}
+	if exists != true {
+		fmt.Printf("%s partition does not exist", partitionID.String())
+		return fmt.Errorf("Partition does not exist")
+	}
+
+	err = self.setZnodeData(znodePath, data)
+	if err != nil {
+		fmt.Printf("Error while setting data at %s partition", partitionID.String())
+		return err
+	}
+	return nil
 }
 
 func (self *ZkMetadataMapper) GetBackendInformation(backendID string) (map[string]interface{}, error) {
