@@ -10,6 +10,8 @@ import (
 type QueryParser interface {
 	RetreiveQueryParams(request interface{}) (map[string]string, error)
 	RetreiveQueryData(request interface{}) (map[string]string, error)
+	RetrieveParamByName(request interface{}, param string) (string, error)
+	RetrieveDataByName(request interface{}, data string) (string, error)
 }
 
 type HTTPQueryParser struct {
@@ -49,5 +51,34 @@ func (hqp *HTTPQueryParser) RetreiveQueryData(request interface{}) (map[string]s
 	return data, nil
 }
 
+func (hqp *HTTPQueryParser) RetrieveParamByName(request interface{}, param string) (string, error) {
+	//panic("implement me")
+	params, err := hqp.RetreiveQueryParams(request)
+	if err != nil {
+		system.Logln("Failed to parse query params")
+		return "", errors.New("Failed to parse query params")
+	}
+	paramvalue, ok := params[param]
+	if !ok {
+		system.Logln("Query param ", param, " not found in request")
+		return "", errors.New("Query param not found in request")
+	}
+	return paramvalue, nil
+}
+
+func (hqp *HTTPQueryParser) RetrieveDataByName(request interface{}, data string) (string, error) {
+	//panic("implement me")
+	datavalues, err := hqp.RetreiveQueryData(request)
+	if err != nil {
+		system.Logln("Failed to parse query data")
+		return "", errors.New("Failed to parse query data")
+	}
+	datavalue, ok := datavalues[data]
+	if !ok {
+		system.Logln("Data key ", data, " not found in request")
+		return "", errors.New("Data key not found in request")
+	}
+	return datavalue, nil
+}
 
 

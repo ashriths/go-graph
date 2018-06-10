@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"fmt"
 	"github.com/ashriths/go-graph/query"
+	"encoding/json"
 )
 
 type Server struct {
@@ -68,15 +69,15 @@ func (server *Server) getOrCreateStorageClient(backendAddr string) (*storage.Sto
 func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 	var succ bool
 	var data graph.ElementProperty
+	var graphID uuid.UUID
 
-	params, err := server.Parser.RetreiveQueryParams(r)
+	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
 	if err != nil {
-		system.Logln("Failed to fetch URL params")
-		fmt.Fprintf(w, "Failed to fetch URL params")
+		system.Logln("Failed to fetch graphid from request")
+		fmt.Fprintf(w, "Failed to fetch graphid from request")
 		return
 	}
-	graphId_str := params["graphid"]
-	graphID, err := uuid.Parse(graphId_str)
+	graphID, err = uuid.Parse(graphID_str)
 	if err != nil {
 		system.Logln("Failed to parse graphid")
 		fmt.Fprintf(w, "Failed to parse graphid")
@@ -107,14 +108,16 @@ func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "Failed to get backend Info")
 			return
 		}
-		backendAddr, ok := data["address"]
-		if !ok {
-			system.Logln("Failed to get backend Info")
-			fmt.Fprintf(w, "Failed to get backend Info")
-			return
+		backendAddr := data["address"].(string)
+
+		stClient, err := server.getOrCreateStorageClient(backendAddr)
+		if err != nil {
+			system.Logln("Failed to create a storage client to backend: " + backendAddr)
+			fmt.Fprintf(w, "Failed to create a storage client to backend: " + backendAddr)
 		}
 
-		if e := server.storageClients[backendAddr.(string)].StoreVertex(vertex, &succ); e != nil {
+		e := stClient.StoreVertex(vertex, &succ)
+		if e != nil || !succ {
 			system.Logln("Failed to add vertex")
 			fmt.Fprintf(w, "Failed to add vertex")
 			return
@@ -170,12 +173,63 @@ func (server *Server) getchildvertices(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request) {
-	keys, ok := r.URL.Query()["graphid"]
-	if !ok || len(keys) < 1 {
-		system.Logln("Url Param 'graphid' is missing")
-		fmt.Fprintf(w, "Url Param 'graphid' is missing")
+	var graphID uuid.UUID
+	var vertexID uuid.UUID
+	var vertex *graph.Vertex
+
+	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
+	if err != nil {
+		system.Logln("Failed to fetch graphid from request")
+		fmt.Fprintf(w, "Failed to fetch graphid from request")
 		return
 	}
+	graphID, err = uuid.Parse(graphID_str)
+	if err != nil {
+		system.Logln("Failed to parse graphid: " + graphID_str)
+		fmt.Fprintf(w, "Failed to parse graphid: " + graphID_str)
+		return
+	}
+
+	vertexID_str, err := server.Parser.RetrieveParamByName(r, "vertexid")
+	if err != nil {
+		system.Logln("Failed to fetch vertexid from request")
+		fmt.Fprintf(w, "Failed to fetch vertexid from request")
+		return
+	}
+	vertexID, err = uuid.Parse(vertexID_str)
+	if err != nil {
+		system.Logln("Failed to parse vertexid: " + vertexID_str)
+		fmt.Fprintf(w, "Failed to parse vertexid: " + vertexID_str)
+		return
+	}
+
+	backendids, err := server.Metadata.GetVertexLocation(graphID, vertexID)
+	for _, backendid := range backendids {
+		 backendInfo, err := server.Metadata.GetBackendInformation(backendid)
+		 backendAddr := backendInfo["address"].(string)
+		 stClient, err :=  server.getOrCreateStorageClient(backendAddr)
+		 if err != nil {
+		 	continue
+		 }
+		 err = stClient.GetVertexById(vertexID, vertex)
+		 if err == nil {
+		 	break
+		 }
+	}
+
+	err, properties := vertex.GetProperties()
+	if err != nil {
+		system.Logln("Failed to fetch vertex properties")
+		fmt.Fprintf(w, "Failed to fetch vertex properties")
+		return
+	}
+	response, err := json.Marshal(properties)
+	if err != nil {
+		system.Logln("Failed to marshal data")
+		fmt.Fprintf(w, "Failed to marshal data")
+		return
+	}
+	fmt.Fprintf(w, string(response))
 }
 
 func (server *Server) getedgeproperties(w http.ResponseWriter, r *http.Request) {
