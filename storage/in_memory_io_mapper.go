@@ -14,10 +14,11 @@ type InMemoryIOMapper struct {
 	//Disk     *DiskStorage
 }
 
-func NewInMemoryIOMapper(metadataAddrs []string) *InMemoryIOMapper {
+func NewInMemoryIOMapper(backendId string, metadataAddrs []string) *InMemoryIOMapper {
 	return &InMemoryIOMapper{
-		Metadata: metadata.NewZkMetadataMapper(metadataAddrs),
-		Memory:   NewMemoryStorage(),
+		BackendId: backendId,
+		Metadata:  metadata.NewZkMetadataMapper(metadataAddrs),
+		Memory:    NewMemoryStorage(),
 	}
 }
 
