@@ -33,24 +33,39 @@ func (self *InMemoryIOMapper) StoreVertex(vertex *graph.Vertex, success *bool) e
 }
 
 func (self *InMemoryIOMapper) GetVertexById(vertexId uuid.UUID, vertex *graph.Vertex) error {
-	e := self.Memory.GetVertexById(vertexId, vertex)
-	system.Logln(vertex)
-	return e
+	return self.Memory.GetVertexById(vertexId, vertex)
 }
 
-func (self *InMemoryIOMapper) GetEdgeById(edgeId uuid.UUID, vertex *graph.Edge) error {
-	panic("todo")
+func (self *InMemoryIOMapper) GetEdgeById(edgeId uuid.UUID, edge *graph.Edge) error {
+	return self.Memory.GetEdgeById(edgeId, edge)
 }
 
 func (self *InMemoryIOMapper) StoreEdge(edge *graph.Edge, success *bool) error {
-	panic("implement me")
+	system.Logf(">> Request to Edge %s\n", edge)
+	*success = false
+	if e := self.Memory.StoreElement(edge); e != nil {
+		return e
+	}
+	if e := self.Memory.Index.CreateEdgeIndex(edge); e != nil {
+		return e
+	}
+	*success = true
+	return nil
+}
+
+func (self *InMemoryIOMapper) RemoveVertex(vertexId uuid.UUID, success *bool) error {
+	*success = false
+	if e := self.Memory.RemoveElement(vertexId, graph.VERTEX); e != nil {
+		return e
+	}
+	if e := self.Memory.Index.RemoveVertexIndex(vertexId); e != nil {
+		return e
+	}
+	*success = true
+	return nil
 }
 
 func (self *InMemoryIOMapper) UpdateProperties(element *graph.Element, success *bool) error {
-	panic("implement me")
-}
-
-func (self *InMemoryIOMapper) RemoveVertex(vertex uuid.UUID, succ *bool) error {
 	panic("implement me")
 }
 

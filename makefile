@@ -22,3 +22,8 @@ doc:
 build:
 	go get github.com/google/uuid
 
+test:
+	go test ./...
+
+testv:
+	go test -v ./...
