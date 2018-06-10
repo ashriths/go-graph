@@ -44,9 +44,6 @@ func (self *StorageClient) Call(method string, args interface{}, reply interface
 		if e := self.Connect(true); e != nil {
 			return e
 		}
-		if e := self.Conn.Call(method, args, reply); e != nil {
-			return e
-		}
 	}
 	system.Logf("%v << %v Args: %v %v\n", self.Addr, method, args, reflect.ValueOf(reply).Elem())
 	return nil

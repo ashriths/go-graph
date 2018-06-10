@@ -41,7 +41,7 @@ func (self *InMemoryIOMapper) GetEdgeById(edgeId uuid.UUID, edge *graph.Edge) er
 }
 
 func (self *InMemoryIOMapper) StoreEdge(edge *graph.Edge, success *bool) error {
-	system.Logf(">> Request to Edge %s\n", edge)
+	system.Logf(">> Request to Store %s\n", edge)
 	*success = false
 	if e := self.Memory.StoreElement(edge); e != nil {
 		return e

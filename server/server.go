@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ashriths/go-graph/common"
 	"github.com/ashriths/go-graph/graph"
+	"github.com/ashriths/go-graph/locator"
 	"github.com/ashriths/go-graph/metadata"
 	"github.com/ashriths/go-graph/storage"
 	"github.com/ashriths/go-graph/system"
@@ -12,14 +13,13 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-	"github.com/ashriths/go-graph/locator"
 )
 
 type Server struct {
 	Config         *ServerConfig
 	Metadata       metadata.Metadata
 	storageClients map[string]*storage.StorageClient
-	Locator		   locator.Locator
+	Locator        locator.Locator
 }
 
 type ServerConfig struct {
@@ -34,8 +34,8 @@ const (
 
 func NewZookeeperServer(config *ServerConfig) (error, *Server) {
 	zkConnMap := &metadata.ZkMetadataMapper{ZkAddrs: config.MetadataServers}
-	locator := &locator.RandomLocator{Metadata:zkConnMap}
-	return nil, &Server{Config: config, Metadata: zkConnMap, Locator:locator}
+	locator := &locator.RandomLocator{Metadata: zkConnMap}
+	return nil, &Server{Config: config, Metadata: zkConnMap, Locator: locator}
 }
 
 func (server *Server) ZkCall(method string, args ...interface{}) []interface{} {

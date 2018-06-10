@@ -10,7 +10,7 @@ type ElementProperty map[string]string
 
 type ElementInterface interface {
 	GetUUID() uuid.UUID
-	Graph() (error, Graph)
+	GetGraphId() uuid.UUID
 	GetProperties() (error, ElementProperty)
 	SetProperties(props ElementProperty) error
 	Remove() error
@@ -20,6 +20,7 @@ type ElementInterface interface {
 
 type Element struct {
 	UUID       uuid.UUID
+	GraphUUID  uuid.UUID
 	Properties ElementProperty
 }
 
@@ -27,8 +28,8 @@ func (self *Element) GetUUID() uuid.UUID {
 	return self.UUID
 }
 
-func (self *Element) Graph() (error, Graph) {
-	panic("todo")
+func (self *Element) GetGraphId() uuid.UUID {
+	return self.GraphUUID
 }
 
 func (self *Element) GetProperties() (error, ElementProperty) {
