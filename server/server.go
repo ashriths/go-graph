@@ -3,9 +3,9 @@ package server
 import (
 	"log"
 	"net/http"
-	"go-graph/storage"
-	"go-graph/metadata"
 	"reflect"
+	"github.com/ashriths/go-graph/metadata"
+	"github.com/ashriths/go-graph/storage"
 )
 
 type Server struct {

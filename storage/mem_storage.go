@@ -27,6 +27,15 @@ func (self *MemoryStorage) StoreElement(element graph.ElementInterface) error {
 	return nil
 }
 
+
+func (self *MemoryStorage) RemoveElement(elementId uuid.UUID, elemType string) error {
+	key := escapeKey(elemType) + "::" + escapeKey(elementId.String())
+	if e := self.kvStore.Set(key, ""); e != nil {
+		return e
+	}
+	return nil
+}
+
 func (self *MemoryStorage) GetVertexById(elementId uuid.UUID, vertex *graph.Vertex) error {
 	key := escapeKey(graph.VERTEX) + "::" + escapeKey(elementId.String())
 	val := self.kvStore.Get(key)

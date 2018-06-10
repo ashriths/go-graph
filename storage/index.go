@@ -4,6 +4,12 @@ import (
 	"container/list"
 	"github.com/ashriths/go-graph/graph"
 	"sync"
+	"github.com/google/uuid"
+)
+
+const (
+	SRC_PREFIX = "SRC"
+	DEST_PREFIX = "DST"
 )
 
 type Index struct {
@@ -28,5 +34,21 @@ func (self *Index) CreateVertexIndex(vertex *graph.Vertex) error {
 }
 
 func (self *Index) CreateEdgeIndex(edge *graph.Edge) error {
-	panic("todo")
+	self.indexLock.Lock()
+	defer self.indexLock.Unlock()
+
+	key := edge.GetUUID().String() + "::" + SRC_PREFIX
+	self.EdgeIndex[key] = edge.SrcVertex.String()
+
+	key = edge.GetUUID().String() + "::" + DEST_PREFIX
+	self.EdgeIndex[key] = edge.DestVertex.String()
+	return nil
+}
+
+func (self *Index) RemoveVertexIndex(vertexId uuid.UUID) error {
+	self.indexLock.Lock()
+	defer self.indexLock.Unlock()
+
+	delete(self.VertexIndex, vertexId.String())
+	return nil
 }

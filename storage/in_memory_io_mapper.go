@@ -57,8 +57,16 @@ func (self *InMemoryIOMapper) UpdateProperties(element *graph.Element, success *
 	panic("implement me")
 }
 
-func (self *InMemoryIOMapper) RemoveVertex(vertex uuid.UUID, succ *bool) error {
-	panic("implement me")
+func (self *InMemoryIOMapper) RemoveVertex(vertexId uuid.UUID, success *bool) error {
+	*success = false
+	if e := self.Memory.RemoveElement(vertexId, graph.VERTEX); e != nil {
+		return e
+	}
+	if e := self.Memory.Index.RemoveVertexIndex(vertexId); e != nil {
+		return e
+	}
+	*success = true
+	return nil
 }
 
 func (self *InMemoryIOMapper) RemoveEdge(edge uuid.UUID, succ *bool) error {
