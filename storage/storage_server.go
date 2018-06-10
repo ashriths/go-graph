@@ -9,9 +9,9 @@ import (
 	"github.com/ashriths/go-graph/metadata"
 )
 
-func RegisterStorage(config *StorageConfig) (string, error) {
-	metadataConnection := metadata.NewZkMetadataMapper(config.MetadataAddrs)
-	backendId, e := metadataConnection.CreateBackend(config.Addr)
+func RegisterStorage(addr string, metadataAddrs []string) (string, error) {
+	metadataConnection := metadata.NewZkMetadataMapper(metadataAddrs)
+	backendId, e := metadataConnection.CreateBackend(addr)
 	if e != nil{
 		return "", e
 	}

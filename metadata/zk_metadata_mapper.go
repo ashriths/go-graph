@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/samuel/go-zookeeper/zk"
 	"path"
+	"github.com/ashriths/go-graph/system"
 )
 
 const (
@@ -298,8 +299,11 @@ func (self *ZkMetadataMapper) SetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUI
 }
 
 func (self *ZkMetadataMapper) startWatchingPartition(partitionID uuid.UUID, watch <- chan zk.Event){
-	panic("todo")
-
+	for {
+		evt := <-watch
+		system.Logln("Watch fired for ", partitionID.String(), evt.Err)
+		//TODO: Call replication here
+	}
 }
 
 var _ Metadata = new(ZkMetadataMapper)
