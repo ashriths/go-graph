@@ -1,36 +1,37 @@
 package metadata
 
 import (
-	"github.com/samuel/go-zookeeper/zk"
-	"time"
-	"fmt"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"time"
+
+	"github.com/samuel/go-zookeeper/zk"
 )
 
 func (self *ZkMetadataMapper) getChildren(path string) ([]string, error) {
-	conn := self.connect(self.connection, self.err)
+	conn := self.connect(self.Connection, self.err)
 	children, _, err := conn.Children(path)
 	return children, err
 }
 
-func (self *ZkMetadataMapper) connect(connection *zk.Conn, err error) *zk.Conn {
+func (self *ZkMetadataMapper) connect(Connection *zk.Conn, err error) *zk.Conn {
 	//Addrs := []string{"169.228.66.172:21810", "169.228.66.170:21810", "169.228.66.171:21810"}
 	Addrs := self.ZkAddrs
-	if connection == nil { // If no connection currently exists
-		connection, _, err = zk.Connect(Addrs, time.Second)
+	if Connection == nil { // If no Connection currently exists
+		Connection, _, err = zk.Connect(Addrs, time.Second)
 		must(err)
-	} else if _, _, err = connection.Get("/"); err != nil { // If connection exists, but is faulty
-		connection.Close()
-		connection, _, err = zk.Connect(Addrs, time.Second)
+	} else if _, _, err = Connection.Get("/"); err != nil { // If Connection exists, but is faulty
+		Connection.Close()
+		Connection, _, err = zk.Connect(Addrs, time.Second)
 		must(err)
 	}
-	return connection
+	return Connection
 }
 
 func (self *ZkMetadataMapper) getZnodeData(znodePath string) (map[string]interface{}, error) {
-	//Establish connection of zookeeper
-	conn := self.connect(self.connection, self.err)
+	//Establish Connection of zookeeper
+	conn := self.connect(self.Connection, self.err)
 
 	//Fetch and unmarshal data for znode
 	data, _, err := conn.Get(znodePath)
@@ -50,8 +51,8 @@ func (self *ZkMetadataMapper) getZnodeData(znodePath string) (map[string]interfa
 }
 
 func (self *ZkMetadataMapper) setZnodeData(znodePath string, data interface{}) error {
-	//Establish connection of zookeeper
-	conn := self.connect(self.connection, self.err)
+	//Establish Connection of zookeeper
+	conn := self.connect(self.Connection, self.err)
 
 	//Marshal and set data for node
 	str, err := json.Marshal(data)
@@ -71,7 +72,7 @@ func (self *ZkMetadataMapper) setZnodeData(znodePath string, data interface{}) e
 }
 
 func (self *ZkMetadataMapper) checkZnodeExists(znodePath string) (bool, error) {
-	conn := self.connect(self.connection, self.err)
+	conn := self.connect(self.Connection, self.err)
 
 	exists, _, err := conn.Exists(znodePath)
 	if err != nil {
@@ -82,8 +83,8 @@ func (self *ZkMetadataMapper) checkZnodeExists(znodePath string) (bool, error) {
 }
 
 func (self *ZkMetadataMapper) createZnode(znodePath string, data interface{}) error {
-	// Establish connection to zookeeper
-	conn := self.connect(self.connection, self.err)
+	// Establish Connection to zookeeper
+	conn := self.connect(self.Connection, self.err)
 
 	// Set partitionID for element
 	//znodePath := path.Join("", typeGRAPH, graphID.String(), znodeType, elementID.String())
