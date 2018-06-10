@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"github.com/ashriths/go-graph/graph"
 	"github.com/ashriths/go-graph/locator"
 	"github.com/ashriths/go-graph/metadata"
@@ -12,6 +11,7 @@ import (
 	"net/http"
 	"reflect"
 	"fmt"
+	"github.com/ashriths/go-graph/query"
 )
 
 type Server struct {
@@ -19,6 +19,7 @@ type Server struct {
 	Metadata       metadata.Metadata
 	storageClients map[string]*storage.StorageClient
 	Locator        locator.Locator
+	Parser         query.QueryParser
 }
 
 type ServerConfig struct {
@@ -35,7 +36,8 @@ const (
 func NewZookeeperServer(config *ServerConfig) (error, *Server) {
 	zkConnMap := &metadata.ZkMetadataMapper{ZkAddrs: config.MetadataServers}
 	locator := &locator.RandomLocator{Metadata: zkConnMap}
-	return nil, &Server{Config: config, Metadata: zkConnMap, Locator: locator}
+	hqp := query.NewHTTPQueryParser()
+	return nil, &Server{Config: config, Metadata: zkConnMap, Locator: locator, Parser: hqp}
 }
 
 func (server *Server) ZkCall(method string, args ...interface{}) []interface{} {
@@ -67,25 +69,24 @@ func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 	var succ bool
 	var data graph.ElementProperty
 
-	keys, ok := r.URL.Query()["graphid"]
-	if !ok || len(keys) < 1 {
-		system.Logln("Url Param 'graphid' is missing")
-		fmt.Fprintf(w, "Url Param 'graphid' is missing")
+	params, err := server.Parser.RetreiveQueryParams(r)
+	if err != nil {
+		system.Logln("Failed to fetch URL params")
+		fmt.Fprintf(w, "Failed to fetch URL params")
 		return
 	}
-
-	graphID, err := uuid.Parse(keys[0])
+	graphId_str := params["graphid"]
+	graphID, err := uuid.Parse(graphId_str)
 	if err != nil {
 		system.Logln("Failed to parse graphid")
 		fmt.Fprintf(w, "Failed to parse graphid")
 		return
 	}
 
-	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&data)
+	data, err = server.Parser.RetreiveQueryData(r)
 	if err != nil {
-		system.Logln("Failed to decode json")
-		fmt.Fprintf(w, "Failed to decode json")
+		system.Logln("Failed to parse request body")
+		fmt.Fprintf(w, "Failed to parse request body")
 		return
 	}
 	vertexid := uuid.New()
@@ -120,6 +121,7 @@ func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	err = server.Metadata.SetVertexLocation(graphID, partitionID, vertexid)
 	system.Logln("Successfully added vertex")
 	fmt.Fprintf(w, "Successfully added vertex")
 }
@@ -167,6 +169,27 @@ func (server *Server) getchildvertices(w http.ResponseWriter, r *http.Request) {
 	panic("todo")
 }
 
+func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request) {
+	keys, ok := r.URL.Query()["graphid"]
+	if !ok || len(keys) < 1 {
+		system.Logln("Url Param 'graphid' is missing")
+		fmt.Fprintf(w, "Url Param 'graphid' is missing")
+		return
+	}
+}
+
+func (server *Server) getedgeproperties(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (server *Server) setproperties(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (server *Server) getgraphid(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func (server *Server) Serve() error {
 	//panic("todo")
 	http.HandleFunc("/AddVertex", server.addvertex)
@@ -180,9 +203,17 @@ func (server *Server) Serve() error {
 	http.HandleFunc("/GetOutEdges", server.getoutedges)
 	http.HandleFunc("/GetParentVertices", server.getparentvertices)
 	http.HandleFunc("/GetChildVertices", server.getchildvertices)
+	http.HandleFunc("/GetVertexProperties", server.getvertexproperties)
+	http.HandleFunc("/GetEdgeProperties", server.getedgeproperties)
+	http.HandleFunc("/SetProperties", server.setproperties)
+	http.HandleFunc("/GetGraphId", server.getgraphid)
+
 
 	go func() {
 		log.Fatal(http.ListenAndServe(server.Config.Addr, nil))
 	}()
 	return nil
 }
+
+var sc *ServerConfig = &ServerConfig{MetadataServers: []string{"169.228.66.172:21810", "169.228.66.170:21810", "169.228.66.171:21810"}, Addr: "0.0.0.0:12345", Ready: make(chan bool)}
+var server, _ = NewZookeeperServer(sc)
