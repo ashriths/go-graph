@@ -3,6 +3,8 @@ package graph
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"encoding/json"
+	"github.com/ashriths/go-graph/common"
 )
 
 type VertexInterface interface {
@@ -37,6 +39,12 @@ func (self *Vertex) GetChildVertices(edgeLabels []string) (error, []Vertex) {
 
 func (self *Vertex) String() string {
 	return fmt.Sprintf("<Vertex:%s>%s ", self.GetUUID(), self.Element.String())
+}
+
+func (self *Vertex) Json() string {
+	str, e := json.Marshal(self)
+	common.LogError(e)
+	return string(str)
 }
 
 func V(uuid uuid.UUID, property ElementProperty) *Vertex {

@@ -1,6 +1,10 @@
 package graph
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"encoding/json"
+	"github.com/ashriths/go-graph/common"
+)
 
 type EdgeInterface interface {
 	ElementInterface
@@ -21,6 +25,12 @@ func (self *Edge) GetSrcVertex() (error, Vertex) {
 
 func (self *Edge) GetDestVertex() (error, Vertex) {
 	panic("todo")
+}
+
+func (self *Edge) Json() string {
+	str, e := json.Marshal(self)
+	common.LogError(e)
+	return string(str)
 }
 
 var _ EdgeInterface = new(Edge)

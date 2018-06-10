@@ -64,3 +64,35 @@ func TestInMemoryIOMapper_RemoveVertex(t *testing.T) {
 	e = s.GetVertexById(u, &v)
 	common.Assert(e != nil, t)
 }
+
+func TestInMemoryIOMapper_StoreEdge(t *testing.T) {
+	var succ bool
+	var e error
+	var ed *graph.Edge
+
+	s := storage.NewInMemoryIOMapper()
+
+	u1 := newUUID()
+	data := graph.ElementProperty{"key1":"value1"}
+	e = s.StoreVertex(graph.V(u1, data), &succ)
+	common.Assert(e == nil, t)
+	common.Assert(succ == true, t)
+
+	u2 := newUUID()
+	data = graph.ElementProperty{"key2":"value2"}
+	e = s.StoreVertex(graph.V(u2, data), &succ)
+	common.Assert(e == nil, t)
+	common.Assert(succ == true, t)
+
+	u3 := newUUID()
+	data = graph.ElementProperty{"key3":"value3"}
+	ed = graph.E(u3, u1, u2, data)
+	e = s.StoreEdge(ed, &succ)
+	common.Assert(e == nil, t)
+	common.Assert(succ == true, t)
+
+	e = s.GetEdgeById(u3, ed)
+	common.Assert(e == nil, t)
+	common.Assert(ed.GetUUID() == u3, t)
+	common.Assert(reflect.DeepEqual(ed.Properties, data), t)
+}

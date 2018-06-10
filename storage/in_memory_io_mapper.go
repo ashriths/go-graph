@@ -53,10 +53,6 @@ func (self *InMemoryIOMapper) StoreEdge(edge *graph.Edge, success *bool) error {
 	return nil
 }
 
-func (self *InMemoryIOMapper) UpdateProperties(element *graph.Element, success *bool) error {
-	panic("implement me")
-}
-
 func (self *InMemoryIOMapper) RemoveVertex(vertexId uuid.UUID, success *bool) error {
 	*success = false
 	if e := self.Memory.RemoveElement(vertexId, graph.VERTEX); e != nil {
@@ -67,6 +63,10 @@ func (self *InMemoryIOMapper) RemoveVertex(vertexId uuid.UUID, success *bool) er
 	}
 	*success = true
 	return nil
+}
+
+func (self *InMemoryIOMapper) UpdateProperties(element *graph.Element, success *bool) error {
+	panic("implement me")
 }
 
 func (self *InMemoryIOMapper) RemoveEdge(edge uuid.UUID, succ *bool) error {
