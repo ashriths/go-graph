@@ -1,9 +1,9 @@
 package graph
 
 import (
-	"github.com/google/uuid"
 	"encoding/json"
 	"github.com/ashriths/go-graph/common"
+	"github.com/google/uuid"
 )
 
 type EdgeInterface interface {
@@ -31,6 +31,18 @@ func (self *Edge) Json() string {
 	str, e := json.Marshal(self)
 	common.LogError(e)
 	return string(str)
+}
+
+func E(guuid, uid, src, dest uuid.UUID, property ElementProperty) *Edge {
+	return &Edge{
+		SrcVertex:  src,
+		DestVertex: dest,
+		Element: Element{
+			GraphUUID:  guuid,
+			UUID:       uid,
+			Properties: property,
+		},
+	}
 }
 
 var _ EdgeInterface = new(Edge)

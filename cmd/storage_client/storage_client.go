@@ -53,6 +53,8 @@ func printList(lst []string) {
 	}
 }
 
+var guuid uuid.UUID
+
 const help = `Usage:
    storage-client <server address> [command <args...>]
 
@@ -76,28 +78,81 @@ func runCmd(s *storage.StorageClient, args []string) bool {
 	var data graph.ElementProperty
 	var e error
 	var v graph.Vertex
+	var ed graph.Edge
 	cmd := args[0]
 
 	switch cmd {
 	case "add-v":
-		e = json.Unmarshal([]byte(args[1]), &data)
-		common.NoError(e)
+		if e := json.Unmarshal([]byte(args[1]), &data); e != nil {
+			common.LogError(e)
+			return false
+		}
 		u, e = uuid.NewUUID()
-		common.NoError(e)
-		common.LogError(s.StoreVertex(graph.V(u, data), &succ))
+		if e := s.StoreVertex(graph.V(guuid, u, data), &succ); e != nil {
+			common.LogError(e)
+			return false
+		}
 		fmt.Println(succ)
 	case "get-v":
 		u, e = uuid.Parse(args[1])
-		common.NoError(e)
-		common.LogError(s.GetVertexById(u, &v))
+		if e != nil {
+			common.LogError(e)
+			return false
+		}
+		if e := s.GetVertexById(u, &v); e != nil {
+			common.LogError(e)
+			return false
+		}
 		fmt.Println(v.Json())
+	case "del-v":
+		u, e = uuid.Parse(args[1])
+		if e != nil {
+			common.LogError(e)
+			return false
+		}
+		if e := s.RemoveVertex(u, &succ); e != nil {
+			common.LogError(e)
+			return false
+		}
+		fmt.Println(succ)
 	case "add-e":
 		u, e = uuid.NewUUID()
-		common.NoError(e)
 		u1, e = uuid.Parse(args[1])
-		common.NoError(e)
+		if e != nil {
+			common.LogError(e)
+			return false
+		}
 		u2, e = uuid.Parse(args[2])
-		common.LogError(s.StoreEdge(graph.E(u, u1, u2, data), &succ))
+		if e != nil {
+			common.LogError(e)
+			return false
+		}
+		if e := s.StoreEdge(graph.E(guuid, u, u1, u2, data), &succ); e != nil {
+			common.LogError(e)
+			return false
+		}
+		fmt.Println(succ)
+	case "get-e":
+		u, e = uuid.Parse(args[1])
+		if e != nil {
+			common.LogError(e)
+			return false
+		}
+		if e := s.GetEdgeById(u, &ed); e != nil {
+			common.LogError(e)
+			return false
+		}
+		fmt.Println(ed.Json())
+	case "del-e":
+		u, e = uuid.Parse(args[1])
+		if e != nil {
+			common.LogError(e)
+			return false
+		}
+		if e := s.RemoveEdge(u, &succ); e != nil {
+			common.LogError(e)
+			return false
+		}
 		fmt.Println(succ)
 	case "help":
 		fmt.Println(cmdHelp)
@@ -146,6 +201,10 @@ func main() {
 
 	addr := args[0]
 	s := storage.NewStorageClient(addr)
+
+	var e error
+	guuid,e   = uuid.NewUUID()
+	common.NoError(e)
 
 	cmdArgs := args[1:]
 	if len(cmdArgs) == 0 {

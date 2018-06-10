@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ashriths/go-graph/graph"
 	"github.com/google/uuid"
 )
@@ -27,7 +28,6 @@ func (self *MemoryStorage) StoreElement(element graph.ElementInterface) error {
 	return nil
 }
 
-
 func (self *MemoryStorage) RemoveElement(elementId uuid.UUID, elemType string) error {
 	key := escapeKey(elemType) + "::" + escapeKey(elementId.String())
 	if e := self.kvStore.Set(key, ""); e != nil {
@@ -39,6 +39,9 @@ func (self *MemoryStorage) RemoveElement(elementId uuid.UUID, elemType string) e
 func (self *MemoryStorage) GetVertexById(elementId uuid.UUID, vertex *graph.Vertex) error {
 	key := escapeKey(graph.VERTEX) + "::" + escapeKey(elementId.String())
 	val := self.kvStore.Get(key)
+	if val == "" {
+		return fmt.Errorf("Vertex with id %s doesn't exist.", elementId.String())
+	}
 	if e := json.Unmarshal([]byte(val), vertex); e != nil {
 		return e
 	}

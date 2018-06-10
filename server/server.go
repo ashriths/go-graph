@@ -1,16 +1,16 @@
 package server
 
 import (
+	"github.com/ashriths/go-graph/metadata"
+	"github.com/ashriths/go-graph/storage"
 	"log"
 	"net/http"
 	"reflect"
-	"github.com/ashriths/go-graph/metadata"
-	"github.com/ashriths/go-graph/storage"
 )
 
 type Server struct {
-	Config  	  *ServerConfig
-	ZkConnMap	  *metadata.ZkMetadataMapper
+	Config         *ServerConfig
+	ZkConnMap      *metadata.ZkMetadataMapper
 	storageClients map[string]*storage.StorageClient
 }
 
@@ -25,7 +25,7 @@ func NewServer(config *ServerConfig) (error, *Server) {
 	return nil, &Server{Config: config, ZkConnMap: zkConnMap}
 }
 
-func (server *Server) ZkCall(method string, args ...interface{}) ([]interface{}) {
+func (server *Server) ZkCall(method string, args ...interface{}) []interface{} {
 	inputs := make([]reflect.Value, len(args))
 	for i, _ := range args {
 		inputs[i] = reflect.ValueOf(args[i])
@@ -33,7 +33,7 @@ func (server *Server) ZkCall(method string, args ...interface{}) ([]interface{})
 	out := reflect.ValueOf(server.ZkConnMap).MethodByName(method).Call(inputs)
 
 	var output = make([]interface{}, len(out))
-	for _,outp := range out[:len(out)] {
+	for _, outp := range out[:len(out)] {
 		output = append(output, outp.Interface())
 	}
 

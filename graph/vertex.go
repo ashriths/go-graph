@@ -1,10 +1,10 @@
 package graph
 
 import (
-	"fmt"
-	"github.com/google/uuid"
 	"encoding/json"
+	"fmt"
 	"github.com/ashriths/go-graph/common"
+	"github.com/google/uuid"
 )
 
 type VertexInterface interface {
@@ -47,21 +47,11 @@ func (self *Vertex) Json() string {
 	return string(str)
 }
 
-func V(uuid uuid.UUID, property ElementProperty) *Vertex {
+func V(guuid, uuid uuid.UUID, property ElementProperty) *Vertex {
 	return &Vertex{
 		Element: Element{
 			UUID:       uuid,
-			Properties: property,
-		},
-	}
-}
-
-func E(uid uuid.UUID, src uuid.UUID, dest uuid.UUID, property ElementProperty) *Edge {
-	return &Edge{
-		SrcVertex:  src,
-		DestVertex: dest,
-		Element: Element{
-			UUID:       uid,
+			GraphUUID:  guuid,
 			Properties: property,
 		},
 	}
