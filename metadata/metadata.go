@@ -7,6 +7,9 @@ import (
 
 // Metadata : Interface exposing zookeeper functionality
 type Metadata interface {
+
+	//Intitialize the zookeeper tree
+	Initialize() error
 	//creates a Znode for a graph vertex
 	CreateVertex(graphID uuid.UUID, vertexID uuid.UUID, partitionID uuid.UUID) error
 	//creates a Znode for a graph edge
@@ -15,6 +18,8 @@ type Metadata interface {
 	CreatePartition(graphID uuid.UUID, partitionID uuid.UUID) error
 	//creates a Znode for a backend
 	CreateBackend(backendAddr string) (string, error)
+	//creates a Znode for a graph
+	CreateGraph(graphID uuid.UUID) error
 
 	//returns the backends that house a particular vertex
 	GetVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) ([]string, error)
@@ -24,6 +29,10 @@ type Metadata interface {
 	GetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID) ([]string, error)
 	//sets the source vertex of an edge
 	SetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID, vertexID uuid.UUID) error
+	//returns list of backend IDs
+	GetAllBackends() ([]string, error)
+	//returns backend information
+	GetBackendInformation(backendID string) (map[string]interface{}, error)
 
 	//adds a backend to a partition
 	AddBackendToPartition(graphID uuid.UUID, partitionID uuid.UUID, backendID string) ([]string, <-chan zk.Event, error)

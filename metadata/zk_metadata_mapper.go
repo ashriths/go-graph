@@ -15,7 +15,7 @@ import (
 const (
 	versionID     = -1
 	typeBACKEND   = "backends"
-	typeGRAPH     = "graph"
+	typeGRAPH     = "graphs"
 	typePARTITION = "partitions"
 	typeVERTEX    = "vertices"
 	typeEDGE      = "edges"
@@ -23,12 +23,29 @@ const (
 
 type ZkMetadataMapper struct {
 	connection *zk.Conn
-	ZkAddrs     []string
+	ZkAddrs    []string
 	err        error
 }
 
 func (self *ZkMetadataMapper) initializeStructure() {
-	panic("todo")
+	self.connection = nil
+	self.ZkAddrs = []string{"169.228.66.172:21810", "169.228.66.170:21810", "169.228.66.171:21810"}
+	self.err = nil
+}
+
+func (self *ZkMetadataMapper) Initialize() error {
+	var err error
+	err = self.createZnode(path.Join("", typeGRAPH), "")
+	if err != nil {
+		fmt.Printf("Error while creating \"graphs\" znode")
+		return err
+	}
+	err = self.createZnode(path.Join("", typeBACKEND), "")
+	if err != nil {
+		fmt.Printf("Error while creating \"backends\" znode")
+		return err
+	}
+	return nil
 }
 
 func (self *ZkMetadataMapper) CreatePartition(graphID uuid.UUID, partitionID uuid.UUID) error {
@@ -63,6 +80,49 @@ func (self *ZkMetadataMapper) CreateBackend(backendAddr string) (string, error) 
 		return backendID, err
 	}
 	return backendID, nil
+}
+
+//CreateGraph : creates a graph Znode
+func (self *ZkMetadataMapper) CreateGraph(graphID uuid.UUID) error {
+	err := self.createZnode(path.Join("", typeGRAPH, graphID.String()), "")
+	if err != nil {
+		fmt.Printf("Error while creating %s graph", graphID.String())
+		return err
+	}
+	err = self.createZnode(path.Join("", typeGRAPH, graphID.String(), typeEDGE), "")
+	if err != nil {
+		fmt.Printf("Error while creating \"edges\" node under %s graph", graphID.String())
+		return err
+	}
+	err = self.createZnode(path.Join("", typeGRAPH, graphID.String(), typeVERTEX), "")
+	if err != nil {
+		fmt.Printf("Error while creating \"vertices\" node under %s graph", graphID.String())
+		return err
+	}
+	err = self.createZnode(path.Join("", typeGRAPH, graphID.String(), typePARTITION), "")
+	if err != nil {
+		fmt.Printf("Error while creating \"partitions\" node under %s graph", graphID.String())
+		return err
+	}
+	return nil
+}
+
+func (self *ZkMetadataMapper) GetAllBackends() ([]string, error) {
+	children, err := self.getChildren(path.Join("", typeBACKEND))
+	if err != nil {
+		fmt.Printf("Error while getting all backend IDs")
+		return nil, err
+	}
+	return children, nil
+}
+
+func (self *ZkMetadataMapper) GetBackendInformation(backendID string) (map[string]interface{}, error) {
+	data, err := self.getZnodeData(path.Join("", typeBACKEND, backendID))
+	if err != nil {
+		fmt.Printf("Error while retrieving data stored at %s backend", backendID)
+		return nil, err
+	}
+	return data, nil
 }
 
 func (self *ZkMetadataMapper) AddBackendToPartition(graphID uuid.UUID, partitionID uuid.UUID, backendID string) ([]string, <-chan zk.Event, error) {
@@ -101,7 +161,7 @@ func must(err error) {
 
 func (self *ZkMetadataMapper) GetVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) ([]string, error) {
 	var partitionID string
-	var backendIDs, children []string
+	var children []string
 	var err error
 
 	// get partitionID from graphID and vertexID
@@ -114,25 +174,25 @@ func (self *ZkMetadataMapper) GetVertexLocation(graphID uuid.UUID, vertexID uuid
 
 	//  get backends from paritionID
 	znodePath = path.Join("", typeGRAPH, graphID.String(), "partitions", partitionID)
-	data, err = self.getZnodeData(znodePath)
+	children, err = self.getChildren(znodePath)
 	if err != nil {
 		fmt.Printf("Error while getting %s paritionID", partitionID)
 		return nil, err
 	}
+	//sort.Strings(children)
+	// backendIDs = append([]string{data["Primary"].(string)}, backendIDs...)
+	// backendIDs = append(backendIDs, data["Secondaries"].([]string)...)
 
-	backendIDs = append([]string{data["Primary"].(string)}, backendIDs...)
-	backendIDs = append(backendIDs, data["Secondaries"].([]string)...)
+	// for _, backendID := range backendIDs {
+	// 	znodePath = path.Join("", typeBACKEND, backendID)
+	// 	data, err = self.getZnodeData(znodePath)
 
-	for _, backendID := range backendIDs {
-		znodePath = path.Join("", typeBACKEND, backendID)
-		data, err = self.getZnodeData(znodePath)
-
-		if err != nil {
-			fmt.Printf("Error while getting backend address of %s backendID", backendID)
-			return nil, err
-		}
-		children = append(children, data["addr"].(string))
-	}
+	// 	if err != nil {
+	// 		fmt.Printf("Error while getting backend address of %s backendID", backendID)
+	// 		return nil, err
+	// 	}
+	// 	children = append(children, data["addr"].(string))
+	// }
 
 	return children, err
 }
@@ -187,6 +247,12 @@ func (self *ZkMetadataMapper) SetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUI
 	}
 
 	return nil
+}
+
+func (self *ZkMetadataMapper) getChildren(path string) ([]string, error) {
+	conn := self.connect(self.connection, self.err)
+	children, _, err := conn.Children(path)
+	return children, err
 }
 
 func (self *ZkMetadataMapper) connect(connection *zk.Conn, err error) *zk.Conn {
