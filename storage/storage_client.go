@@ -77,4 +77,8 @@ func (self *StorageClient) RemoveEdge(edge uuid.UUID, succ *bool) error {
 	return self.Call("Storage.RemoveEdge", edge, succ)
 }
 
+func (self *StorageClient) RegisterToHostPartition(ids []uuid.UUID, succ *bool) error {
+	return self.Call("Storage.RegisterToHostPartition", ids, succ)
+}
+
 var _ IOMapper = new(StorageClient)

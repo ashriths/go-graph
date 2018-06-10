@@ -8,14 +8,16 @@ import (
 )
 
 type InMemoryIOMapper struct {
-	Metadata *metadata.Metadata
-	Memory   *MemoryStorage
+	BackendId string
+	Metadata  metadata.Metadata
+	Memory    *MemoryStorage
 	//Disk     *DiskStorage
 }
 
-func NewInMemoryIOMapper() *InMemoryIOMapper {
+func NewInMemoryIOMapper(metadataAddrs []string) *InMemoryIOMapper {
 	return &InMemoryIOMapper{
-		Memory: NewMemoryStorage(),
+		Metadata: metadata.NewZkMetadataMapper(metadataAddrs),
+		Memory:   NewMemoryStorage(),
 	}
 }
 
@@ -71,6 +73,11 @@ func (self *InMemoryIOMapper) UpdateProperties(element *graph.Element, success *
 
 func (self *InMemoryIOMapper) RemoveEdge(edge uuid.UUID, succ *bool) error {
 	panic("implement me")
+}
+
+func (self *InMemoryIOMapper) RegisterToHostPartition(ids []uuid.UUID, succ *bool) error {
+	_, e := self.Metadata.AddBackendToPartition(ids[0], ids[1], self.BackendId)
+	return e
 }
 
 var _ IOMapper = new(InMemoryIOMapper)

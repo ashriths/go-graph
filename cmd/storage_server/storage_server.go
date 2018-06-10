@@ -17,10 +17,10 @@ var (
 	frc         = flag.String("rc", cmd.DefaultRCPath, "config file")
 )
 
-func GetStore(storeType string) storage.IOMapper {
+func GetStore(storeType string, metadataAddrs []string) storage.IOMapper {
 	switch storeType {
 	case "memory":
-		return storage.NewInMemoryIOMapper()
+		return storage.NewInMemoryIOMapper(metadataAddrs)
 	}
 	panic("Invalid StoreType")
 }
@@ -38,7 +38,7 @@ func main() {
 				common.NoError(fmt.Errorf("back-end index out of range: %d", i))
 			}
 
-			backConfig := rc.StorageConfig(i, GetStore(*store))
+			backConfig := rc.StorageConfig(i, GetStore(*store, rc.MetadataServers))
 
 			log.Printf("bin storage_server back-end serving on %s", backConfig.Addr)
 			common.NoError(storage.ServeStorage(backConfig))

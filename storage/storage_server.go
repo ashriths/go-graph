@@ -6,7 +6,17 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
+	"github.com/ashriths/go-graph/metadata"
 )
+
+func RegisterStorage(config *StorageConfig) (string, error) {
+	metadataConnection := metadata.NewZkMetadataMapper(config.MetadataAddrs)
+	backendId, e := metadataConnection.CreateBackend(config.Addr)
+	if e != nil{
+		return "", e
+	}
+	return backendId, nil
+}
 
 func ServeStorage(storageConfig *StorageConfig) error {
 	rpcServer := rpc.NewServer()

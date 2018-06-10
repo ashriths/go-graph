@@ -26,6 +26,7 @@ func (self *RC) StorageCount() int {
 func (self *RC) StorageConfig(i int, s storage.IOMapper) *storage.StorageConfig {
 	ret := new(storage.StorageConfig)
 	ret.Addr = self.Storage[i]
+	ret.MetadataAddrs = self.MetadataServers
 	ret.Store = s
 	ret.Ready = make(chan bool, 1)
 	return ret

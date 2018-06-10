@@ -2,7 +2,6 @@ package metadata
 
 import (
 	"github.com/google/uuid"
-	"github.com/samuel/go-zookeeper/zk"
 )
 
 // Metadata : Interface exposing zookeeper functionality
@@ -41,5 +40,5 @@ type Metadata interface {
 	GetPartitionInformation(graphID uuid.UUID, partitionID uuid.UUID) (map[string]interface{}, error)
 
 	//adds a backend to a partition
-	AddBackendToPartition(graphID uuid.UUID, partitionID uuid.UUID, backendID string) ([]string, <-chan zk.Event, error)
+	AddBackendToPartition(graphID uuid.UUID, partitionID uuid.UUID, backendID string) ([]string, error)
 }

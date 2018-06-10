@@ -18,9 +18,10 @@ type KVStore interface {
 }
 
 type StorageConfig struct {
-	Addr  string
-	Ready chan<- bool
-	Store IOMapper
+	Addr          string
+	MetadataAddrs []string
+	Ready         chan<- bool
+	Store         IOMapper
 }
 
 func escapeKey(s string) string {

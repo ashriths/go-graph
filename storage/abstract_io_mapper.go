@@ -17,4 +17,6 @@ type IOMapper interface {
 
 	RemoveVertex(vertex uuid.UUID, succ *bool) error
 	RemoveEdge(edge uuid.UUID, succ *bool) error
+
+	RegisterToHostPartition(ids []uuid.UUID, succ *bool) error
 }
