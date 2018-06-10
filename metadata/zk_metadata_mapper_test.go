@@ -1,8 +1,8 @@
 package metadata_test
 
 import (
-	"go-graph/common"
-	"go-graph/metadata"
+	"github.com/ashriths/go-graph/metadata"
+	"github.com/ashriths/go-graph/common"
 	"path"
 	"testing"
 

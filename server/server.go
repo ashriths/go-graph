@@ -2,8 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/ashriths/go-graph/common"
 	"github.com/ashriths/go-graph/graph"
 	"github.com/ashriths/go-graph/locator"
 	"github.com/ashriths/go-graph/metadata"
@@ -13,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"fmt"
 )
 
 type Server struct {
@@ -30,6 +29,7 @@ type ServerConfig struct {
 
 const (
 	LOCATOR = "RandomLocator"
+	REPLICATIONFACTOR = 3
 )
 
 func NewZookeeperServer(config *ServerConfig) (error, *Server) {
@@ -66,42 +66,62 @@ func (server *Server) getOrCreateStorageClient(backendAddr string) (*storage.Sto
 func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 	var succ bool
 	var data graph.ElementProperty
+
+	keys, ok := r.URL.Query()["graphid"]
+	if !ok || len(keys) < 1 {
+		system.Logln("Url Param 'graphid' is missing")
+		fmt.Fprintf(w, "Url Param 'graphid' is missing")
+		return
+	}
+
+	graphID, err := uuid.Parse(keys[0])
+	if err != nil {
+		system.Logln("Failed to parse graphid")
+		fmt.Fprintf(w, "Failed to parse graphid")
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&data)
+	err = decoder.Decode(&data)
 	if err != nil {
 		system.Logln("Failed to decode json")
+		fmt.Fprintf(w, "Failed to decode json")
+		return
 	}
-	vertexid, e := uuid.NewUUID()
-	common.NoError(e)
+	vertexid := uuid.New()
+	vertex := graph.V(graphID, vertexid, data)
 
-	//partitions, err := server.Metadata.GetAllPartitions()
-	//if err != nil {
-	//	system.Logln("Failed to get partitions from zookeeper")
-	//	fmt.Fprintf(w, "Error! Failed to add vertex")
-	//}
-	count := 0
-	for _, partition := range partitions {
-		if count == 3 {
-			break
-		}
-		backendInfo, err := server.Metadata.GetBackendInformation(backend)
+	partitionID, err := server.Locator.FindPartition(vertex.Element)
+	if err != nil {
+		system.Logln("Failed to get a partition")
+		fmt.Fprintf(w, "Failed to get a partition")
+		return
+	}
+
+	backends, err := server.Metadata.GetBackendsForPartition(graphID, partitionID)
+	for _, backend := range backends {
+		data, err := server.Metadata.GetBackendInformation(backend)
 		if err != nil {
-			continue
+			system.Logln("Failed to get backend Info")
+			fmt.Fprintf(w, "Failed to get backend Info")
+			return
 		}
-		backendAddr, ok := backendInfo["address"]
+		backendAddr, ok := data["address"]
 		if !ok {
-			continue
+			system.Logln("Failed to get backend Info")
+			fmt.Fprintf(w, "Failed to get backend Info")
+			return
 		}
-		stClient, err := server.getOrCreateStorageClient(backendAddr.(string))
-		if err != nil {
-			continue
-		}
-		stClient.StoreVertex(graph.V(vertexid, data), &succ)
-		if succ {
-			count += 1
+
+		if e := server.storageClients[backendAddr.(string)].StoreVertex(vertex, &succ); e != nil {
+			system.Logln("Failed to add vertex")
+			fmt.Fprintf(w, "Failed to add vertex")
+			return
 		}
 	}
 
+	system.Logln("Successfully added vertex")
+	fmt.Fprintf(w, "Successfully added vertex")
 }
 
 func (server *Server) deletevertex(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +131,8 @@ func (server *Server) deletevertex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) addedge(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+	//panic("todo")
+
 }
 
 func (server *Server) deleteedge(w http.ResponseWriter, r *http.Request) {

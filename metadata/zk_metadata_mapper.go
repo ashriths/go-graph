@@ -3,7 +3,7 @@ package metadata
 import (
 	"encoding/json"
 	"fmt"
-	"go-graph/system"
+	"github.com/ashriths/go-graph/system"
 	"path"
 
 	"github.com/google/uuid"
