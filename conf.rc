@@ -1,10 +1,15 @@
 {
     "Storage": [
-        "localhost:18013"
+        "localhost:18013",
+        "localhost:18014",
+        "localhost:18015"
     ],
     "MetadataServers": [
         "169.228.66.172:21810",
         "169.228.66.170:21810",
         "169.228.66.171:21810"
+    ],
+    "Servers": [
+        "localhost:18000"
     ]
 }

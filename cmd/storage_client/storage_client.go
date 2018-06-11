@@ -203,7 +203,7 @@ func main() {
 	s := storage.NewStorageClient(addr)
 
 	var e error
-	guuid,e   = uuid.NewUUID()
+	guuid, e = uuid.NewUUID()
 	common.NoError(e)
 
 	cmdArgs := args[1:]

@@ -18,7 +18,7 @@ type Metadata interface {
 	//creates a Znode for a backend
 	CreateBackend(backendAddr string) (string, error)
 	//creates a Znode for a graph
-	CreateGraph(graphID uuid.UUID) error
+	CreateGraph(graphID uuid.UUID, data interface{}) error
 
 	//returns the backends that house a particular vertex
 	GetVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) ([]string, error)

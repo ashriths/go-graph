@@ -1,10 +1,10 @@
 package query
 
 import (
-	"net/http"
-	"github.com/ashriths/go-graph/system"
-	"errors"
 	"encoding/json"
+	"errors"
+	"github.com/ashriths/go-graph/system"
+	"net/http"
 )
 
 type QueryParser interface {
@@ -24,7 +24,7 @@ func NewHTTPQueryParser() *HTTPQueryParser {
 func (hqp *HTTPQueryParser) RetreiveQueryParams(request interface{}) (map[string]string, error) {
 	//panic("implement me")
 	Request := request.(*http.Request)
-	params:= Request.URL.Query()
+	params := Request.URL.Query()
 	if len(params) < 1 {
 		system.Logln("Query contained no parameters")
 		return make(map[string]string), errors.New("Query contained no parameters")
@@ -80,5 +80,3 @@ func (hqp *HTTPQueryParser) RetrieveDataByName(request interface{}, data string)
 	}
 	return datavalue, nil
 }
-
-

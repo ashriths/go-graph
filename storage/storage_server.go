@@ -2,21 +2,23 @@ package storage
 
 import (
 	"fmt"
+	"github.com/ashriths/go-graph/common"
+	"github.com/ashriths/go-graph/metadata"
+	"github.com/ashriths/go-graph/system"
 	"log"
 	"net"
 	"net/http"
 	"net/rpc"
-	"github.com/ashriths/go-graph/metadata"
-	"github.com/ashriths/go-graph/common"
 )
 
 func RegisterStorage(addr string, metadataAddrs []string) (string, error) {
 	metadataConnection := metadata.NewZkMetadataMapper(metadataAddrs)
 	backendId, e := metadataConnection.CreateBackend(addr)
-	if e != nil{
+	if e != nil {
 		common.LogError(e)
 		return "", e
 	}
+	system.Logln("Registered backend to ", metadataAddrs, " : ", backendId)
 	return backendId, nil
 }
 

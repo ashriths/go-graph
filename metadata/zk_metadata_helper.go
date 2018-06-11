@@ -5,11 +5,11 @@ import (
 	"errors"
 	"time"
 
-	"github.com/samuel/go-zookeeper/zk"
 	"github.com/ashriths/go-graph/system"
+	"github.com/samuel/go-zookeeper/zk"
 )
 
-var ZK_TIMEOUT = 2 * time.Minute
+var ZK_TIMEOUT = 30 * time.Second
 
 func (self *ZkMetadataMapper) getChildren(path string) ([]string, error) {
 	self.connect()

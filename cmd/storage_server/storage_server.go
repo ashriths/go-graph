@@ -9,6 +9,7 @@ import (
 	"github.com/ashriths/go-graph/storage"
 	"github.com/ashriths/go-graph/system"
 	"log"
+	"strconv"
 )
 
 var (
@@ -30,23 +31,25 @@ func main() {
 	args := flag.Args()
 	system.Logging = true
 	n := 0
-	if len(args) == 0 {
 
-		rc, e := cmd.LoadRC(*frc)
-		common.NoError(e)
-		run := func(i int) {
-			if i > len(rc.Storage) {
-				common.NoError(fmt.Errorf("back-end index out of range: %d", i))
-			}
-			backendId, e:= storage.RegisterStorage(rc.Storage[i], rc.MetadataServers);
-			if e!=nil{
-				log.Fatal("Unable to register storage.")
-			}
-			storageConfig := rc.StorageConfig(i, GetStore(*store, backendId, rc.MetadataServers))
+	rc, e := cmd.LoadRC(*frc)
+	common.NoError(e)
 
-			log.Printf("bin storage_server back-end serving on %s", storageConfig.Addr)
-			common.NoError(storage.ServeStorage(storageConfig))
+	run := func(i int) {
+		if i > len(rc.Storage) {
+			common.NoError(fmt.Errorf("back-end index out of range: %d", i))
 		}
+		backendId, e := storage.RegisterStorage(rc.Storage[i], rc.MetadataServers)
+		if e != nil {
+			log.Fatal("Unable to register storage.")
+		}
+		storageConfig := rc.StorageConfig(i, GetStore(*store, backendId, rc.MetadataServers))
+
+		log.Printf("bin storage_server back-end serving on %s", storageConfig.Addr)
+		common.NoError(storage.ServeStorage(storageConfig))
+	}
+
+	if len(args) == 0 {
 
 		for i, b := range rc.Storage {
 
@@ -55,6 +58,14 @@ func main() {
 				go run(i)
 				n++
 			}
+		}
+	} else {
+		// scan for indices for the addresses
+		for _, a := range args {
+			i, e := strconv.Atoi(a)
+			common.NoError(e)
+			go run(i)
+			n++
 		}
 	}
 

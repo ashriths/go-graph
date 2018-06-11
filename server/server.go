@@ -1,18 +1,18 @@
 package server
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/ashriths/go-graph/graph"
 	"github.com/ashriths/go-graph/locator"
 	"github.com/ashriths/go-graph/metadata"
+	"github.com/ashriths/go-graph/query"
 	"github.com/ashriths/go-graph/storage"
 	"github.com/ashriths/go-graph/system"
 	"github.com/google/uuid"
 	"log"
 	"net/http"
 	"reflect"
-	"fmt"
-	"github.com/ashriths/go-graph/query"
-	"encoding/json"
 )
 
 type Server struct {
@@ -30,15 +30,20 @@ type ServerConfig struct {
 }
 
 const (
-	LOCATOR = "RandomLocator"
-	REPLICATIONFACTOR = 3
+	REPLICATION_FACTOR = 3
 )
 
-func NewZookeeperServer(config *ServerConfig) (error, *Server) {
+func NewZookeeperServer(config *ServerConfig) *Server {
 	zkConnMap := &metadata.ZkMetadataMapper{ZkAddrs: config.MetadataServers}
 	locator := &locator.RandomLocator{Metadata: zkConnMap}
 	hqp := query.NewHTTPQueryParser()
-	return nil, &Server{Config: config, Metadata: zkConnMap, Locator: locator, Parser: hqp}
+	return &Server{
+		Config:         config,
+		Metadata:       zkConnMap,
+		Locator:        locator,
+		Parser:         hqp,
+		storageClients: make(map[string]*storage.StorageClient),
+	}
 }
 
 func (server *Server) ZkCall(method string, args ...interface{}) []interface{} {
@@ -71,12 +76,28 @@ func writeResponse(w http.ResponseWriter, data map[string]interface{}) {
 	if err != nil {
 		system.Logln("Failed to marshal response data")
 	}
+	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, string(byteData))
 }
 
 func handleError(w http.ResponseWriter, msg string) {
 	system.Logln(msg)
 	data := map[string]interface{}{"error": msg, "success": false}
+	w.Header().Set("Content-Type", "application/json")
+	writeResponse(w, data)
+}
+
+func (server *Server) addGraph(w http.ResponseWriter, r *http.Request) {
+	graphId, e := uuid.NewUUID()
+	if e != nil {
+		handleError(w, "Cannot create UUID")
+		return
+	}
+	if e := server.Metadata.CreateGraph(graphId, "{}"); e != nil {
+		handleError(w, fmt.Sprintf("Failed to create graph. %s", e))
+		return
+	}
+	data := map[string]interface{}{"data": map[string]string{"id": graphId.String()}, "success": true}
 	writeResponse(w, data)
 }
 
@@ -121,7 +142,7 @@ func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 
 		stClient, err := server.getOrCreateStorageClient(backendAddr)
 		if err != nil {
-			handleError(w, "Failed to create a storage client to backend: " + backendAddr)
+			handleError(w, "Failed to create a storage client to backend: "+backendAddr)
 			return
 		}
 
@@ -200,7 +221,7 @@ func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request
 	}
 	graphID, err = uuid.Parse(graphID_str)
 	if err != nil {
-		handleError(w, "Failed to parse graphid: " + graphID_str)
+		handleError(w, "Failed to parse graphid: "+graphID_str)
 		return
 	}
 
@@ -211,22 +232,22 @@ func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request
 	}
 	vertexID, err = uuid.Parse(vertexID_str)
 	if err != nil {
-		handleError(w, "Failed to parse vertexid: " + vertexID_str)
+		handleError(w, "Failed to parse vertexid: "+vertexID_str)
 		return
 	}
 
 	backendids, err := server.Metadata.GetVertexLocation(graphID, vertexID)
 	for _, backendid := range backendids {
-		 backendInfo, err := server.Metadata.GetBackendInformation(backendid)
-		 backendAddr := backendInfo["address"].(string)
-		 stClient, err :=  server.getOrCreateStorageClient(backendAddr)
-		 if err != nil {
-		 	continue
-		 }
-		 err = stClient.GetVertexById(vertexID, vertex)
-		 if err == nil {
-		 	break
-		 }
+		backendInfo, err := server.Metadata.GetBackendInformation(backendid)
+		backendAddr := backendInfo["address"].(string)
+		stClient, err := server.getOrCreateStorageClient(backendAddr)
+		if err != nil {
+			continue
+		}
+		err = stClient.GetVertexById(vertexID, vertex)
+		if err == nil {
+			break
+		}
 	}
 
 	err, properties := vertex.GetProperties()
@@ -253,6 +274,7 @@ func (server *Server) getgraphid(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) Serve() error {
 	//panic("todo")
+	http.HandleFunc("/AddGraph", server.addGraph)
 	http.HandleFunc("/AddVertex", server.addvertex)
 	http.HandleFunc("/DeleteVertex", server.deletevertex)
 	http.HandleFunc("/AddEdge", server.addedge)
@@ -269,12 +291,15 @@ func (server *Server) Serve() error {
 	http.HandleFunc("/SetProperties", server.setproperties)
 	http.HandleFunc("/GetGraphId", server.getgraphid)
 
-
 	go func() {
 		log.Fatal(http.ListenAndServe(server.Config.Addr, nil))
 	}()
 	return nil
 }
 
-var sc *ServerConfig = &ServerConfig{MetadataServers: []string{"169.228.66.172:21810", "169.228.66.170:21810", "169.228.66.171:21810"}, Addr: "0.0.0.0:12345", Ready: make(chan bool)}
-var server, _ = NewZookeeperServer(sc)
+//var sc = &ServerConfig{
+//	MetadataServers: []string{"169.228.66.172:21810", "169.228.66.170:21810", "169.228.66.171:21810"},
+//	Addr: "0.0.0.0:12345",
+//	Ready: make(chan bool),
+//}
+//var _ Server = NewZookeeperServer(sc)

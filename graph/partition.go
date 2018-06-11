@@ -7,12 +7,11 @@ type PartitionInterface interface {
 }
 
 type Partition struct {
-	Id uuid.UUID
+	Id       uuid.UUID
 	vertices []Vertex
-	edges []Edge
+	edges    []Edge
 }
 
 func (partition *Partition) Move(partitionInterface PartitionInterface) error {
 	panic("implement me")
 }
-

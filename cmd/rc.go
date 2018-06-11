@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ashriths/go-graph/server"
 	"github.com/ashriths/go-graph/storage"
 	"os"
 )
@@ -12,6 +13,7 @@ var DefaultRCPath = "conf.rc"
 type RC struct {
 	Storage         []string
 	MetadataServers []string
+	Servers         []string
 }
 
 type BackAddr struct {
@@ -28,6 +30,14 @@ func (self *RC) StorageConfig(i int, s storage.IOMapper) *storage.StorageConfig 
 	ret.Addr = self.Storage[i]
 	ret.MetadataAddrs = self.MetadataServers
 	ret.Store = s
+	ret.Ready = make(chan bool, 1)
+	return ret
+}
+
+func (self *RC) ServerConfig(i int) *server.ServerConfig {
+	ret := new(server.ServerConfig)
+	ret.Addr = self.Servers[i]
+	ret.MetadataServers = self.MetadataServers
 	ret.Ready = make(chan bool, 1)
 	return ret
 }
