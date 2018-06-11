@@ -65,7 +65,7 @@ const cmdHelp = `Command list:
    add-v <data>
    get-v <uuid>
    del-v <uuid>
-   add-e <src-uuid> <dest-uuid> data
+   add-e <src-uuid> <dest-uuid> name data
    help
    exit
 `
@@ -127,7 +127,12 @@ func runCmd(s *storage.StorageClient, args []string) bool {
 			common.LogError(e)
 			return false
 		}
-		if e := s.StoreEdge(graph.E(guuid, u, u1, u2, data), &succ); e != nil {
+		name := args[3]
+		if e := json.Unmarshal([]byte(args[4]), &data); e != nil {
+			common.LogError(e)
+			return false
+		}
+		if e := s.StoreEdge(graph.E(guuid, u, u1, u2, name, data), &succ); e != nil {
 			common.LogError(e)
 			return false
 		}

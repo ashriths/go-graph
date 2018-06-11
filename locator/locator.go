@@ -15,7 +15,7 @@ const (
 )
 
 type Locator interface {
-	FindPartition(element graph.Element) (uuid.UUID, error)
+	FindPartition(element graph.ElementInterface) (uuid.UUID, error)
 	//FindBackend(element graph.Element, zkConn *metadata.ZkMetadataMapper, numBackends int) (string, error)
 }
 
@@ -29,7 +29,7 @@ type RandomLocator struct {
 	StClient []*storage.StorageClient
 }
 
-func (randomLocator *RandomLocator) FindPartition(element graph.Element) (uuid.UUID, error) {
+func (randomLocator *RandomLocator) FindPartition(element graph.ElementInterface) (uuid.UUID, error) {
 
 	partitions, err := randomLocator.Metadata.GetAllPartitions(element.GetGraphId())
 	if err != nil {
@@ -64,7 +64,7 @@ func (randomLocator *RandomLocator) FindPartition(element graph.Element) (uuid.U
 			}
 			backendAddr := data["address"]
 			stClient := storage.NewStorageClient(backendAddr.(string))
-			uuidList := [2]uuid.UUID{element.GraphUUID, partitionID}
+			uuidList := [2]uuid.UUID{element.GetGraphId(), partitionID}
 			var succ bool
 			err = stClient.RegisterToHostPartition(uuidList[:], &succ)
 			if err == nil {

@@ -22,7 +22,7 @@ const (
 	EDGE      = "edges"
 
 	BACKEND_PREFIX = "back-"
-	EMPTY_DATA = "{}"
+	EMPTY_DATA     = "{}"
 )
 
 type ZkMetadataMapper struct {
@@ -229,7 +229,7 @@ func must(err error) {
 	}
 }
 
-func (self *ZkMetadataMapper) GetVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) ([]string, error) {
+func (self *ZkMetadataMapper) GetVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) (*uuid.UUID, []string, error) {
 	var partitionID string
 	var children []string
 	var err error
@@ -239,6 +239,7 @@ func (self *ZkMetadataMapper) GetVertexLocation(graphID uuid.UUID, vertexID uuid
 	data, err := self.getZnodeData(znodePath)
 	if err != nil {
 		system.Logf("Error while getting %s vertex", vertexID.String())
+		return nil, nil, err
 	}
 	partitionID = data["partitionID"].(string)
 
@@ -247,7 +248,13 @@ func (self *ZkMetadataMapper) GetVertexLocation(graphID uuid.UUID, vertexID uuid
 	children, err = self.getChildren(znodePath)
 	if err != nil {
 		system.Logf("Error while getting %s paritionID", partitionID)
-		return nil, err
+		return nil, nil, err
+	}
+
+	partitionUUID, err := uuid.Parse(partitionID)
+	if err != nil {
+		system.Logf("Error while parsing %s paritionID", partitionID)
+		return nil, nil, err
 	}
 	//sort.Strings(children)
 	// backendIDs = append([]string{data["Primary"].(string)}, backendIDs...)
@@ -264,7 +271,7 @@ func (self *ZkMetadataMapper) GetVertexLocation(graphID uuid.UUID, vertexID uuid
 	// 	children = append(children, data["addr"].(string))
 	// }
 
-	return children, err
+	return &partitionUUID, children, err
 }
 
 func (self *ZkMetadataMapper) SetVertexLocation(graphID uuid.UUID, partitionID uuid.UUID, vertexID uuid.UUID) error {
@@ -292,18 +299,18 @@ func (self *ZkMetadataMapper) SetVertexLocation(graphID uuid.UUID, partitionID u
 	return nil
 }
 
-func (self *ZkMetadataMapper) GetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID) ([]string, error) {
+func (self *ZkMetadataMapper) GetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUID) (*uuid.UUID, []string, error) {
 	znodePath := path.Join(ROOT, GRAPH, graphID.String(), EDGE, edgeID.String())
 	data, err := self.getZnodeData(znodePath)
 	if err != nil {
 		system.Logf("Failed to fetch data for znode: %s", znodePath)
-		return make([]string, 0), err
+		return nil, make([]string, 0), err
 	}
 
 	srcID_str := data["srcID"].(string)
 	srcID, err := uuid.FromBytes([]byte(srcID_str))
 	if err != nil {
-		return make([]string, 0), err
+		return nil, make([]string, 0), err
 	}
 
 	return self.GetVertexLocation(graphID, srcID)

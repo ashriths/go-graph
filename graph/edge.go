@@ -33,10 +33,11 @@ func (self *Edge) Json() string {
 	return string(str)
 }
 
-func E(guuid, uid, src, dest uuid.UUID, property ElementProperty) *Edge {
+func E(guuid, uid, src, dest uuid.UUID, name string, property ElementProperty) *Edge {
 	return &Edge{
 		SrcVertex:  src,
 		DestVertex: dest,
+		Name:       name,
 		Element: Element{
 			GraphUUID:  guuid,
 			UUID:       uid,
