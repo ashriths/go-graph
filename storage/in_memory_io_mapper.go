@@ -68,6 +68,28 @@ func (self *InMemoryIOMapper) RemoveVertex(vertexId uuid.UUID, success *bool) er
 	return nil
 }
 
+func (self *InMemoryIOMapper) GetOutEdges(vertexId uuid.UUID, edges *[]graph.Edge) error {
+	var edge graph.Edge
+	var _edges []graph.Edge
+	i := self.Memory.Index.VertexIndex[vertexId.String()].Front()
+	for i != nil{
+		u, _ := uuid.Parse(i.Value.(EdgeIndex).Id)
+
+		e := self.GetEdgeById(u, &edge)
+		if e != nil{
+			continue
+		}
+		_edges = append(_edges, edge)
+		i = i.Next()
+	}
+	*edges = _edges
+	return nil
+}
+
+func (self *InMemoryIOMapper) GetInEdges(vertexId uuid.UUID, edges *[]graph.Edge) error {
+	panic("implement me")
+}
+
 func (self *InMemoryIOMapper) UpdateProperties(element *graph.Element, success *bool) error {
 	panic("implement me")
 }

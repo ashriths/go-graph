@@ -332,7 +332,7 @@ func (server *Server) getInEdges(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) getOutEdges(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+
 }
 
 func (server *Server) getParentVertices(w http.ResponseWriter, r *http.Request) {
@@ -340,7 +340,7 @@ func (server *Server) getParentVertices(w http.ResponseWriter, r *http.Request) 
 }
 
 func (server *Server) getChildVertices(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+
 }
 
 func (server *Server) findAndRunRPCOnBackend(w http.ResponseWriter, graphID uuid.UUID,

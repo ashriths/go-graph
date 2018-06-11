@@ -30,7 +30,7 @@ type RandomLocator struct {
 	StClient []*storage.StorageClient
 }
 
-func (randomLocator *RandomLocator) createPartition(element graph.Element) (uuid.UUID, error) {
+func (randomLocator *RandomLocator) createPartition(element graph.ElementInterface) (uuid.UUID, error) {
 	partitionID := uuid.New()
 	err := randomLocator.Metadata.CreatePartition(element.GetGraphId(), partitionID)
 	if err != nil {
@@ -56,7 +56,7 @@ func (randomLocator *RandomLocator) createPartition(element graph.Element) (uuid
 		}
 		backendAddr := data["address"]
 		stClient := storage.NewStorageClient(backendAddr.(string))
-		uuidList := [2]uuid.UUID{element.GraphUUID, partitionID}
+		uuidList := [2]uuid.UUID{element.GetGraphId(), partitionID}
 		var succ bool
 		err = stClient.RegisterToHostPartition(uuidList[:], &succ)
 		if err == nil {
@@ -67,7 +67,7 @@ func (randomLocator *RandomLocator) createPartition(element graph.Element) (uuid
 		system.Logln("Failed to replicate to ", REPLICATIONFACTOR, " backends")
 		return uuid.New(), err
 	}
-	err = randomLocator.Metadata.SetPartitionInformation(element.GetGraphId(), partitionID)
+	//err = randomLocator.Metadata.SetPartitionInformation(element.GetGraphId(), partitionID)
 	if err != nil {
 		system.Logln("Failed to update element count in partition: ", partitionID)
 		return uuid.New(), err
@@ -75,7 +75,7 @@ func (randomLocator *RandomLocator) createPartition(element graph.Element) (uuid
 	return partitionID, nil
 }
 
-func (randomLocator *RandomLocator) FindPartition(element graph.Element) (uuid.UUID, error) {
+func (randomLocator *RandomLocator) FindPartition(element graph.ElementInterface) (uuid.UUID, error) {
 
 	partitions, err := randomLocator.Metadata.GetAllPartitions(element.GetGraphId())
 	if err != nil {
@@ -101,7 +101,7 @@ func (randomLocator *RandomLocator) FindPartition(element graph.Element) (uuid.U
 		randInd := random(0, len(partitionsWithSpaceArr))
 		partitionID = partitionsWithSpaceArr[randInd]
 	}
-	err = randomLocator.Metadata.SetPartitionInformation(element.GetGraphId(), partitionID)
+	//err = randomLocator.Metadata.SetPartitionInformation(element.GetGraphId(), partitionID)
 	if err != nil {
 		system.Logln("Failed to update element count in partition: ", partitionID)
 		return uuid.New(), err
