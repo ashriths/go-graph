@@ -13,6 +13,9 @@ type IOMapper interface {
 	GetVertexById(vertexId uuid.UUID, vertex *graph.Vertex) error
 	GetEdgeById(edgeId uuid.UUID, edge *graph.Edge) error
 
+	GetOutEdges(vertexId uuid.UUID, edges *[]graph.Edge) error
+	GetInEdges(vertexId uuid.UUID, edges *[]graph.Edge) error
+
 	UpdateProperties(element *graph.Element, success *bool) error
 
 	RemoveVertex(vertex uuid.UUID, succ *bool) error

@@ -81,4 +81,12 @@ func (self *StorageClient) RegisterToHostPartition(ids []uuid.UUID, succ *bool) 
 	return self.Call("Storage.RegisterToHostPartition", ids, succ)
 }
 
+func (self *StorageClient) GetOutEdges(vertexId uuid.UUID, edges *[]graph.Edge) error {
+	return self.Call("Storage.GetOutEdges", vertexId, edges)
+}
+
+func (self *StorageClient) GetInEdges(vertexId uuid.UUID, edges *[]graph.Edge) error {
+	return self.Call("Storage.GetInEdges", vertexId, edges)
+}
+
 var _ IOMapper = new(StorageClient)
