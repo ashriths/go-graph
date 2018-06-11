@@ -169,20 +169,83 @@ func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 func (server *Server) deletevertex(w http.ResponseWriter, r *http.Request) {
 	// Delete all edges that have destination as this vertex
 	// Then delete the source vertex
-	panic("todo")
+	//panic("todo")
 }
 
 func (server *Server) addedge(w http.ResponseWriter, r *http.Request) {
 	//panic("todo")
-
 }
 
 func (server *Server) deleteedge(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+	//panic("todo")
+	var succ bool
+	var graphID, edgeID uuid.UUID
+
+	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
+	if err != nil {
+		handleError(w, "Failed to fetch graphid from request")
+		return
+	}
+	graphID, err = uuid.Parse(graphID_str)
+	if err != nil {
+		handleError(w, "Failed to parse graphid")
+		return
+	}
+
+	edgeID_str, err := server.Parser.RetrieveParamByName(r, "edgeid")
+	if err != nil {
+		handleError(w, "Failed to fetch edgeid from request")
+		return
+	}
+	edgeID, err = uuid.Parse(edgeID_str)
+	if err != nil {
+		handleError(w, "Failed to parse edgeid")
+		return
+	}
+
+	server.findAndRunRPCOnBackend(w, graphID, edgeID, "Edge", "RemoveEdge", edgeID, &succ)
+	err = server.Metadata.DeleteEdge(graphID, edgeID)
+	if err != nil {
+		handleError(w, "Failed to delete edge znode on zookeeper")
+		return
+	}
+
+	system.Logln("Successfully deleted edge")
+
+	responsemsg := map[string]interface{}{"msg": "Successfully deleted edge", "success": true}
+	writeResponse(w, responsemsg)
 }
 
-func (server *Server) addproperty(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+func (server *Server) addvertexproperty(w http.ResponseWriter, r *http.Request) {
+	//panic("todo")
+	var succ bool
+	var graphID, vertexID uuid.UUID
+
+	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
+	if err != nil {
+		handleError(w, "Failed to fetch graphid from request")
+		return
+	}
+	graphID, err = uuid.Parse(graphID_str)
+	if err != nil {
+		handleError(w, "Failed to parse graphid")
+		return
+	}
+
+	vertexID_str, err := server.Parser.RetrieveParamByName(r, "vertexid")
+	if err != nil {
+		handleError(w, "Failed to fetch vertexid from request")
+		return
+	}
+	edgeID, err = uuid.Parse(edgeID_str)
+	if err != nil {
+		handleError(w, "Failed to parse edgeid")
+		return
+	}
+}
+
+func (server *Server) addedgeproperty(w http.ResponseWriter, r *http.Request) {
+	//panic("todo")
 }
 
 func (server *Server) getsrcvertex(w http.ResponseWriter, r *http.Request) {
@@ -320,7 +383,8 @@ func (server *Server) Serve() error {
 	http.HandleFunc("/DeleteVertex", server.deletevertex)
 	http.HandleFunc("/AddEdge", server.addedge)
 	http.HandleFunc("/DeleteEdge", server.deleteedge)
-	http.HandleFunc("/AddProperty", server.addproperty)
+	http.HandleFunc("/AddVertexProperty", server.addvertexproperty)
+	http.HandleFunc("/AddEdgeProperty", server.addedgeproperty)
 	http.HandleFunc("/GetSrcVertex", server.getsrcvertex)
 	http.HandleFunc("/GetDestVertex", server.getdestvertex)
 	http.HandleFunc("/GetInEdges", server.getinedges)
