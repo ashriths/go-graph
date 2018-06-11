@@ -3,6 +3,7 @@ package metadata
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ashriths/go-graph/system"
@@ -29,28 +30,28 @@ func (self *ZkMetadataMapper) connect() {
 	}
 }
 
-func (self *ZkMetadataMapper) getZnodeData(znodePath string) (map[string]interface{}, error) {
+func (self *ZkMetadataMapper) getZnodeData(znodePath string) (map[string]interface{}, *zk.Stat, error) {
 	//Establish Connection of zookeeper
 	self.connect()
 
 	//Fetch and unmarshal data for znode
-	data, _, err := self.Connection.Get(znodePath)
+	data, statusInfo, err := self.Connection.Get(znodePath)
 	if err != nil {
 		system.Logf("Error while getting znode at path: %s", znodePath)
-		return make(map[string]interface{}), err
+		return make(map[string]interface{}), statusInfo, err
 	}
 
 	var dat map[string]interface{}
 	err = json.Unmarshal(data, &dat)
 	if err != nil {
 		system.Logf("Error while unmarshalling data for znode: %s", znodePath)
-		return make(map[string]interface{}), err
+		return make(map[string]interface{}), statusInfo, err
 	}
 
-	return dat, nil
+	return dat, statusInfo, nil
 }
 
-func (self *ZkMetadataMapper) setZnodeData(znodePath string, data interface{}) error {
+func (self *ZkMetadataMapper) setZnodeData(znodePath string, data interface{}, versionID int32) error {
 	//Establish Connection of zookeeper
 	self.connect()
 
@@ -140,5 +141,38 @@ func (self *ZkMetadataMapper) createZnodeIfNotExists(znodePath string, data inte
 		return err
 	}
 
+	return nil
+}
+
+func (self *ZkMetadataMapper) deleteZnode(znodePath string) error {
+	self.connect()
+	exists, err := self.checkZnodeExists(znodePath)
+	if err != nil {
+		system.Logf("Failed to check if vertex exists for znode: %s", znodePath)
+		return err
+	}
+
+	if !exists {
+		system.Logf("Znode does not exists for znode: %s", znodePath)
+		return fmt.Errorf("Vertex does not exist")
+	}
+
+	err = self.Connection.Delete(znodePath, DEFAULTVERSION)
+	if err != nil {
+		system.Logf("Failed to delete Znode for path: %s", znodePath)
+		return err
+	}
+	return nil
+}
+
+func (self *ZkMetadataMapper) changePartitionInfo(znodePath string, value int32) error {
+	data, statusInfo, err := self.getZnodeData(znodePath)
+	if err != nil {
+		system.Logf("Error while retrieving data stored at path: %s", znodePath)
+		return nil
+	}
+	newValue := data["count"].(int32) + value
+	newData := map[string]string{"elementCount": string(newValue)}
+	err = self.setZnodeData(znodePath, newData, statusInfo.Version)
 	return nil
 }
