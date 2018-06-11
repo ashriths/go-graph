@@ -20,6 +20,11 @@ type Metadata interface {
 	//creates a Znode for a graph
 	CreateGraph(graphID uuid.UUID, data interface{}) error
 
+	//Delete the Znode for a graph vertex
+	DeleteVertex(graphID uuid.UUID, vertexID uuid.UUID) error
+	//Delete the Znode for a graph edge
+	DeleteEdge(graphID uuid.UUID, edgeID uuid.UUID) error
+
 	//returns the backends that house a particular vertex
 	GetVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) (*uuid.UUID, []string, error)
 	//sets the partition to which a vertex belongs
@@ -43,4 +48,8 @@ type Metadata interface {
 
 	//adds a backend to a partition
 	AddBackendToPartition(graphID uuid.UUID, partitionID uuid.UUID, backendID string) ([]string, error)
+	//increment count of number of edges/vertices in a partition
+	IncrementElementCount(graphID uuid.UUID, partitionID uuid.UUID) error
+	//decrement count of number of edges/vertices in a partition
+	DecrementElementCount(graphID uuid.UUID, partitionID uuid.UUID) error
 }

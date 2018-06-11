@@ -173,7 +173,78 @@ func (server *Server) deletevertex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) addedge(w http.ResponseWriter, r *http.Request) {
-	//panic("todo")
+	var succ bool
+	var data graph.ElementProperty
+	var graphID uuid.UUID
+
+	graphIdStr, err := server.Parser.RetrieveParamByName(r, "graphid")
+	if err != nil {
+		handleError(w, "Failed to fetch graphid from request")
+		return
+	}
+	graphID, err = uuid.Parse(graphIdStr)
+	if err != nil {
+		handleError(w, "Failed to parse graphid")
+		return
+	}
+
+	data, err = server.Parser.RetreiveQueryData(r)
+	if err != nil {
+		handleError(w, "Failed to parse request body")
+		return
+	}
+	srcId, err := uuid.Parse(data["SrcVertex"])
+	if err != nil {
+		handleError(w, "Invalid UUID for SrcVertex")
+		return
+	}
+	destId, err := uuid.Parse(data["DestVertex"])
+	if err != nil {
+		handleError(w, "Invalid UUID for DestVertex")
+		return
+	}
+	edgeName, ok := data["Name"]
+	if !ok {
+		handleError(w, "Edge must have a relation Name")
+		return
+	}
+	edgeId := uuid.New()
+	edge := graph.E(graphID, edgeId, srcId, destId, edgeName, data)
+
+	partitionId, backends, err := server.Metadata.GetVertexLocation(graphID, srcId)
+	for _, backend := range backends {
+		data, err := server.Metadata.GetBackendInformation(backend)
+		if err != nil {
+			handleError(w, "Failed to get backend Info")
+			return
+		}
+		backendAddr := data["address"].(string)
+
+		stClient, err := server.getOrCreateStorageClient(backendAddr)
+		if err != nil {
+			handleError(w, "Failed to create a storage client to backend: "+backendAddr)
+			return
+		}
+
+		e := stClient.StoreEdge(edge, &succ)
+		if e != nil || !succ {
+			handleError(w, "Failed to add edge to backend")
+			return
+		}
+	}
+
+	err = server.Metadata.CreateEdge(graphID, *partitionId, edgeId)
+	if err != nil {
+		handleError(w, "Failed to create edge in Metadata")
+		return
+	}
+
+	system.Logln("Successfully added Edge")
+
+	responsedata := map[string]interface{}{"edgeId": edgeId.String()}
+	responsemsg := map[string]interface{}{"msg": "Successfully added edge", "success": true, "data": responsedata}
+	writeResponse(w, responsemsg)
+
 }
 
 func (server *Server) deleteedge(w http.ResponseWriter, r *http.Request) {
