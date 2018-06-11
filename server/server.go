@@ -287,38 +287,6 @@ func (server *Server) deleteEdge(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, responsemsg)
 }
 
-func (server *Server) addvertexproperty(w http.ResponseWriter, r *http.Request) {
-	//panic("todo")
-	//var succ bool
-	//var graphID, vertexID uuid.UUID
-	//
-	//graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
-	//if err != nil {
-	//	handleError(w, "Failed to fetch graphid from request")
-	//	return
-	//}
-	//graphID, err = uuid.Parse(graphID_str)
-	//if err != nil {
-	//	handleError(w, "Failed to parse graphid")
-	//	return
-	//}
-	//
-	//vertexID_str, err := server.Parser.RetrieveParamByName(r, "vertexid")
-	//if err != nil {
-	//	handleError(w, "Failed to fetch vertexid from request")
-	//	return
-	//}
-	//edgeID, err = uuid.Parse(edgeID_str)
-	//if err != nil {
-	//	handleError(w, "Failed to parse edgeid")
-	//	return
-	//}
-}
-
-func (server *Server) addedgeproperty(w http.ResponseWriter, r *http.Request) {
-	//panic("todo")
-}
-
 func (server *Server) updateEdge(w http.ResponseWriter, r *http.Request) {
 	panic("todo")
 }
@@ -332,6 +300,55 @@ func (server *Server) getInEdges(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) getOutEdges(w http.ResponseWriter, r *http.Request) {
+	var edges []graph.Edge
+	var graphID, vertexId uuid.UUID
+
+	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
+	if err != nil {
+		handleError(w, "Failed to fetch graphid from request")
+		return
+	}
+	graphID, err = uuid.Parse(graphID_str)
+	if err != nil {
+		handleError(w, "Failed to parse graphid")
+		return
+	}
+
+	vertexIdStr, err := server.Parser.RetrieveParamByName(r, "vertexid")
+	if err != nil {
+		handleError(w, "Failed to fetch edgeid from request")
+		return
+	}
+	vertexId, err = uuid.Parse(vertexIdStr)
+	if err != nil {
+		handleError(w, "Failed to parse edgeid")
+		return
+	}
+	_, backends, err := server.Metadata.GetVertexLocation(graphID, vertexId)
+	for _, backend := range backends {
+		data, err := server.Metadata.GetBackendInformation(backend)
+		if err != nil {
+			continue
+		}
+		backendAddr := data["address"].(string)
+
+		stClient, err := server.getOrCreateStorageClient(backendAddr)
+		if err != nil {
+			continue
+		}
+		e := stClient.GetOutEdges(vertexId, &edges)
+		if e != nil {
+			continue
+		}
+	}
+	if edges == nil{
+		handleError(w, "Failed to fetch edgeid from request")
+		return
+	}
+	system.Logln("Successfully got out edges")
+
+	responsemsg := map[string]interface{}{"msg": "Successfully got out edges", "success": true, "data": edges}
+	writeResponse(w, responsemsg)
 
 }
 
@@ -439,10 +456,6 @@ func (server *Server) getEdge(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, responsemsg)
 }
 
-func (server *Server) setproperties(w http.ResponseWriter, r *http.Request) {
-
-}
-
 func (server *Server) getGraphs(w http.ResponseWriter, r *http.Request) {
 	var graphIds []uuid.UUID
 	if e := server.Metadata.GetGraphs(&graphIds); e != nil {
@@ -468,7 +481,6 @@ func (server *Server) Serve() error {
 	http.HandleFunc("/GetChildVertices", server.getChildVertices)
 	http.HandleFunc("/GetVertex", server.getVertex)
 	http.HandleFunc("/GetEdge", server.getEdge)
-	http.HandleFunc("/SetProperties", server.setproperties)
 	http.HandleFunc("/GetGraphs", server.getGraphs)
 
 	go func() {
