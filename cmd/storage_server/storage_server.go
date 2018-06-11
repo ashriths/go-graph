@@ -31,6 +31,7 @@ func main() {
 	system.Logging = true
 	n := 0
 	if len(args) == 0 {
+
 		rc, e := cmd.LoadRC(*frc)
 		common.NoError(e)
 		run := func(i int) {

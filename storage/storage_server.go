@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"net/rpc"
 	"github.com/ashriths/go-graph/metadata"
+	"github.com/ashriths/go-graph/common"
 )
 
 func RegisterStorage(addr string, metadataAddrs []string) (string, error) {
 	metadataConnection := metadata.NewZkMetadataMapper(metadataAddrs)
 	backendId, e := metadataConnection.CreateBackend(addr)
 	if e != nil{
+		common.LogError(e)
 		return "", e
 	}
 	return backendId, nil
