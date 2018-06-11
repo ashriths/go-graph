@@ -307,8 +307,8 @@ func (self *ZkMetadataMapper) GetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUI
 		return nil, make([]string, 0), err
 	}
 
-	srcID_str := data["srcID"].(string)
-	srcID, err := uuid.FromBytes([]byte(srcID_str))
+	srcIdStr := data["srcID"].(string)
+	srcID, err := uuid.Parse(srcIdStr)
 	if err != nil {
 		return nil, make([]string, 0), err
 	}

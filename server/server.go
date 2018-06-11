@@ -53,8 +53,8 @@ func (server *Server) ZkCall(method string, args ...interface{}) []interface{} {
 	}
 	out := reflect.ValueOf(server.Metadata).MethodByName(method).Call(inputs)
 
-	var output = make([]interface{}, len(out))
-	for _, outp := range out[:len(out)] {
+	var output []interface{}
+	for _, outp := range out {
 		output = append(output, outp.Interface())
 	}
 
@@ -125,7 +125,7 @@ func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 	vertexid := uuid.New()
 	vertex := graph.V(graphID, vertexid, data)
 
-	partitionID, err := server.Locator.FindPartition(vertex.Element)
+	partitionID, err := server.Locator.FindPartition(vertex)
 	if err != nil {
 		handleError(w, "Failed to get a partition")
 		return
@@ -211,17 +211,17 @@ func (server *Server) getchildvertices(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) findAndRunRPCOnBackend(w http.ResponseWriter, graphID uuid.UUID,
 	elementID uuid.UUID, elementType string, method string, args ...interface{}) {
+	var err error
 	inputs := make([]reflect.Value, len(args))
 	for i, _ := range args {
 		inputs[i] = reflect.ValueOf(args[i])
 	}
 	output := server.ZkCall("Get"+elementType+"Location", graphID, elementID)
-	backendids := output[0].([]string)
-	err := output[1].(error)
-	//backendids, err := server.Metadata.GetVertexLocation(graphID, elementID)
-	if err != nil {
-		handleError(w, "Failed to run query on backend")
+	if output[2] != nil {
+		err := output[2].(error)
+		handleError(w, fmt.Sprintf("Failed to get location. %s", err))
 	}
+	backendids := output[1].([]string)
 	for _, backendid := range backendids {
 		backendInfo, err := server.Metadata.GetBackendInformation(backendid)
 		backendAddr := backendInfo["address"].(string)
@@ -230,10 +230,10 @@ func (server *Server) findAndRunRPCOnBackend(w http.ResponseWriter, graphID uuid
 			continue
 		}
 		ret := reflect.ValueOf(stClient).MethodByName(method).Call(inputs)
-		err = ret[0].Interface().(error)
-		if err == nil {
+		if ret[0].Interface() == nil {
 			break
 		}
+		err = ret[0].Interface().(error)
 	}
 	if err != nil {
 		handleError(w, "Failed to run query on backend")
@@ -243,7 +243,7 @@ func (server *Server) findAndRunRPCOnBackend(w http.ResponseWriter, graphID uuid
 func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request) {
 	var graphID uuid.UUID
 	var vertexID uuid.UUID
-	var vertex *graph.Vertex
+	var vertex graph.Vertex
 
 	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
 	if err != nil {
@@ -267,22 +267,15 @@ func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	server.findAndRunRPCOnBackend(w, graphID, vertexID, "Vertex", "GetVertexById", vertexID, vertex)
-
-	err, properties := vertex.GetProperties()
-	if err != nil {
-		handleError(w, "Failed to fetch vertex properties")
-		return
-	}
-	responsedata := map[string]interface{}{"VertexProperties": properties}
-	responsemsg := map[string]interface{}{"msg": "Successfully fetches vertex properties", "success": true, "data": responsedata}
+	server.findAndRunRPCOnBackend(w, graphID, vertexID, "Vertex", "GetVertexById", vertexID, &vertex)
+	responsemsg := map[string]interface{}{"msg": "Successfully fetches vertex properties", "success": true, "data": vertex}
 	writeResponse(w, responsemsg)
 }
 
 func (server *Server) getedgeproperties(w http.ResponseWriter, r *http.Request) {
 	var graphID uuid.UUID
 	var edgeID uuid.UUID
-	var edge *graph.Edge
+	var edge graph.Edge
 
 	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
 	if err != nil {
@@ -306,16 +299,9 @@ func (server *Server) getedgeproperties(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	//server.findAndRunRPCOnBackend(w, graphID, vertexID, "Vertex", "GetVertexById", vertexID, vertex)
-	server.findAndRunRPCOnBackend(w, graphID, edgeID, "Edge", "GetEdgeById", edgeID, edge)
+	server.findAndRunRPCOnBackend(w, graphID, edgeID, "Edge", "GetEdgeById", edgeID, &edge)
 
-	err, properties := edge.GetProperties()
-	if err != nil {
-		handleError(w, "Failed to fetch edge properties")
-		return
-	}
-	responsedata := map[string]interface{}{"EdgeProperties": properties}
-	responsemsg := map[string]interface{}{"msg": "Successfully fetches edge properties", "success": true, "data": responsedata}
+	responsemsg := map[string]interface{}{"msg": "Successfully fetches edge properties", "success": true, "data": edge}
 	writeResponse(w, responsemsg)
 }
 
