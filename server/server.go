@@ -101,7 +101,7 @@ func (server *Server) addGraph(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, data)
 }
 
-func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
+func (server *Server) addVertex(w http.ResponseWriter, r *http.Request) {
 	var succ bool
 	var data graph.ElementProperty
 	var graphID uuid.UUID
@@ -166,13 +166,13 @@ func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, responsemsg)
 }
 
-func (server *Server) deletevertex(w http.ResponseWriter, r *http.Request) {
+func (server *Server) deleteVertex(w http.ResponseWriter, r *http.Request) {
 	// Delete all edges that have destination as this vertex
 	// Then delete the source vertex
-	//panic("todo")
+	panic("todo")
 }
 
-func (server *Server) addedge(w http.ResponseWriter, r *http.Request) {
+func (server *Server) addEdge(w http.ResponseWriter, r *http.Request) {
 	var succ bool
 	var data graph.ElementProperty
 	var graphID uuid.UUID
@@ -247,7 +247,7 @@ func (server *Server) addedge(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (server *Server) deleteedge(w http.ResponseWriter, r *http.Request) {
+func (server *Server) deleteEdge(w http.ResponseWriter, r *http.Request) {
 	//panic("todo")
 	var succ bool
 	var graphID, edgeID uuid.UUID
@@ -319,27 +319,27 @@ func (server *Server) addedgeproperty(w http.ResponseWriter, r *http.Request) {
 	//panic("todo")
 }
 
-func (server *Server) getsrcvertex(w http.ResponseWriter, r *http.Request) {
+func (server *Server) updateEdge(w http.ResponseWriter, r *http.Request) {
 	panic("todo")
 }
 
-func (server *Server) getdestvertex(w http.ResponseWriter, r *http.Request) {
+func (server *Server) updateVertex(w http.ResponseWriter, r *http.Request) {
 	panic("todo")
 }
 
-func (server *Server) getinedges(w http.ResponseWriter, r *http.Request) {
+func (server *Server) getInEdges(w http.ResponseWriter, r *http.Request) {
 	panic("todo")
 }
 
-func (server *Server) getoutedges(w http.ResponseWriter, r *http.Request) {
+func (server *Server) getOutEdges(w http.ResponseWriter, r *http.Request) {
 	panic("todo")
 }
 
-func (server *Server) getparentvertices(w http.ResponseWriter, r *http.Request) {
+func (server *Server) getParentVertices(w http.ResponseWriter, r *http.Request) {
 	panic("todo")
 }
 
-func (server *Server) getchildvertices(w http.ResponseWriter, r *http.Request) {
+func (server *Server) getChildVertices(w http.ResponseWriter, r *http.Request) {
 	panic("todo")
 }
 
@@ -374,7 +374,7 @@ func (server *Server) findAndRunRPCOnBackend(w http.ResponseWriter, graphID uuid
 	}
 }
 
-func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request) {
+func (server *Server) getVertex(w http.ResponseWriter, r *http.Request) {
 	var graphID uuid.UUID
 	var vertexID uuid.UUID
 	var vertex graph.Vertex
@@ -406,7 +406,7 @@ func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request
 	writeResponse(w, responsemsg)
 }
 
-func (server *Server) getedgeproperties(w http.ResponseWriter, r *http.Request) {
+func (server *Server) getEdge(w http.ResponseWriter, r *http.Request) {
 	var graphID uuid.UUID
 	var edgeID uuid.UUID
 	var edge graph.Edge
@@ -443,29 +443,33 @@ func (server *Server) setproperties(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (server *Server) getgraphid(w http.ResponseWriter, r *http.Request) {
-
+func (server *Server) getGraphs(w http.ResponseWriter, r *http.Request) {
+	var graphIds []uuid.UUID
+	if e := server.Metadata.GetGraphs(&graphIds); e != nil {
+		handleError(w, fmt.Sprintf("Failed to get graphs. %s", e))
+		return
+	}
+	responsemsg := map[string]interface{}{"msg": "Successfully fetched graphs", "success": true, "data": graphIds}
+	writeResponse(w, responsemsg)
 }
 
 func (server *Server) Serve() error {
 	//panic("todo")
 	http.HandleFunc("/AddGraph", server.addGraph)
-	http.HandleFunc("/AddVertex", server.addvertex)
-	http.HandleFunc("/DeleteVertex", server.deletevertex)
-	http.HandleFunc("/AddEdge", server.addedge)
-	http.HandleFunc("/DeleteEdge", server.deleteedge)
-	http.HandleFunc("/AddVertexProperty", server.addvertexproperty)
-	http.HandleFunc("/AddEdgeProperty", server.addedgeproperty)
-	http.HandleFunc("/GetSrcVertex", server.getsrcvertex)
-	http.HandleFunc("/GetDestVertex", server.getdestvertex)
-	http.HandleFunc("/GetInEdges", server.getinedges)
-	http.HandleFunc("/GetOutEdges", server.getoutedges)
-	http.HandleFunc("/GetParentVertices", server.getparentvertices)
-	http.HandleFunc("/GetChildVertices", server.getchildvertices)
-	http.HandleFunc("/GetVertexProperties", server.getvertexproperties)
-	http.HandleFunc("/GetEdgeProperties", server.getedgeproperties)
+	http.HandleFunc("/AddVertex", server.addVertex)
+	http.HandleFunc("/DeleteVertex", server.deleteVertex)
+	http.HandleFunc("/AddEdge", server.addEdge)
+	http.HandleFunc("/DeleteEdge", server.deleteEdge)
+	http.HandleFunc("/updateVertex", server.updateVertex)
+	http.HandleFunc("/updateEdge", server.updateEdge)
+	http.HandleFunc("/GetInEdges", server.getInEdges)
+	http.HandleFunc("/GetOutEdges", server.getOutEdges)
+	http.HandleFunc("/GetParentVertices", server.getParentVertices)
+	http.HandleFunc("/GetChildVertices", server.getChildVertices)
+	http.HandleFunc("/GetVertex", server.getVertex)
+	http.HandleFunc("/GetEdge", server.getEdge)
 	http.HandleFunc("/SetProperties", server.setproperties)
-	http.HandleFunc("/GetGraphId", server.getgraphid)
+	http.HandleFunc("/GetGraphs", server.getGraphs)
 
 	go func() {
 		log.Fatal(http.ListenAndServe(server.Config.Addr, nil))

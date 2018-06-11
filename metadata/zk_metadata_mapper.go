@@ -110,6 +110,21 @@ func (self *ZkMetadataMapper) CreateBackend(backendAddr string) (string, error) 
 	return backendID, nil
 }
 
+//CreateGraph : Gets all graphs in the systems
+func (self *ZkMetadataMapper) GetGraphs(graphIds *[]uuid.UUID) error {
+	self.connect()
+	znodePath := path.Join(ROOT, GRAPH)
+	graphIdStrs, _, err := self.Connection.Children(znodePath)
+	if err != nil {
+		return err
+	}
+	for _, i := range graphIdStrs {
+		u, _ := uuid.Parse(i)
+		*graphIds = append(*graphIds, u)
+	}
+	return nil
+}
+
 //CreateGraph : creates a graph Znode
 func (self *ZkMetadataMapper) CreateGraph(graphID uuid.UUID, data interface{}) error {
 	err := self.createZnode(path.Join(ROOT, GRAPH, graphID.String()), data)

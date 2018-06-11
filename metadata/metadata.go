@@ -17,8 +17,11 @@ type Metadata interface {
 	CreatePartition(graphID uuid.UUID, partitionID uuid.UUID) error
 	//creates a Znode for a backend
 	CreateBackend(backendAddr string) (string, error)
+
 	//creates a Znode for a graph
 	CreateGraph(graphID uuid.UUID, data interface{}) error
+	// Gets all graphs in the system
+	GetGraphs(graphsIds *[]uuid.UUID) error
 
 	//Delete the Znode for a graph vertex
 	DeleteVertex(graphID uuid.UUID, vertexID uuid.UUID) error
