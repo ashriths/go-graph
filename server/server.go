@@ -209,6 +209,37 @@ func (server *Server) getchildvertices(w http.ResponseWriter, r *http.Request) {
 	panic("todo")
 }
 
+func (server *Server) findAndRunRPCOnBackend(w http.ResponseWriter, graphID uuid.UUID,
+	elementID uuid.UUID, elementType string, method string, args ...interface{}) {
+	inputs := make([]reflect.Value, len(args))
+	for i, _ := range args {
+		inputs[i] = reflect.ValueOf(args[i])
+	}
+	output := server.ZkCall("Get"+elementType+"Location", graphID, elementID)
+	backendids := output[0].([]string)
+	err := output[1].(error)
+	//backendids, err := server.Metadata.GetVertexLocation(graphID, elementID)
+	if err != nil {
+		handleError(w, "Failed to run query on backend")
+	}
+	for _, backendid := range backendids {
+		backendInfo, err := server.Metadata.GetBackendInformation(backendid)
+		backendAddr := backendInfo["address"].(string)
+		stClient, err := server.getOrCreateStorageClient(backendAddr)
+		if err != nil {
+			continue
+		}
+		ret := reflect.ValueOf(stClient).MethodByName(method).Call(inputs)
+		err = ret[0].Interface().(error)
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
+		handleError(w, "Failed to run query on backend")
+	}
+}
+
 func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request) {
 	var graphID uuid.UUID
 	var vertexID uuid.UUID
@@ -236,19 +267,7 @@ func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	backendids, err := server.Metadata.GetVertexLocation(graphID, vertexID)
-	for _, backendid := range backendids {
-		backendInfo, err := server.Metadata.GetBackendInformation(backendid)
-		backendAddr := backendInfo["address"].(string)
-		stClient, err := server.getOrCreateStorageClient(backendAddr)
-		if err != nil {
-			continue
-		}
-		err = stClient.GetVertexById(vertexID, vertex)
-		if err == nil {
-			break
-		}
-	}
+	server.findAndRunRPCOnBackend(w, graphID, vertexID, "Vertex", "GetVertexById", vertexID, vertex)
 
 	err, properties := vertex.GetProperties()
 	if err != nil {
@@ -261,7 +280,43 @@ func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request
 }
 
 func (server *Server) getedgeproperties(w http.ResponseWriter, r *http.Request) {
+	var graphID uuid.UUID
+	var edgeID uuid.UUID
+	var edge *graph.Edge
 
+	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
+	if err != nil {
+		handleError(w, "Failed to fetch graphid from request")
+		return
+	}
+	graphID, err = uuid.Parse(graphID_str)
+	if err != nil {
+		handleError(w, "Failed to parse graphid: "+graphID_str)
+		return
+	}
+
+	edgeID_str, err := server.Parser.RetrieveParamByName(r, "edgeid")
+	if err != nil {
+		handleError(w, "Failed to fetch edgeid from request")
+		return
+	}
+	edgeID, err = uuid.Parse(edgeID_str)
+	if err != nil {
+		handleError(w, "Failed to parse edgeid: "+edgeID_str)
+		return
+	}
+
+	//server.findAndRunRPCOnBackend(w, graphID, vertexID, "Vertex", "GetVertexById", vertexID, vertex)
+	server.findAndRunRPCOnBackend(w, graphID, edgeID, "Edge", "GetEdgeById", edgeID, edge)
+
+	err, properties := edge.GetProperties()
+	if err != nil {
+		handleError(w, "Failed to fetch edge properties")
+		return
+	}
+	responsedata := map[string]interface{}{"EdgeProperties": properties}
+	responsemsg := map[string]interface{}{"msg": "Successfully fetches edge properties", "success": true, "data": responsedata}
+	writeResponse(w, responsemsg)
 }
 
 func (server *Server) setproperties(w http.ResponseWriter, r *http.Request) {
