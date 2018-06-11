@@ -289,30 +289,30 @@ func (server *Server) deleteEdge(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) addvertexproperty(w http.ResponseWriter, r *http.Request) {
 	//panic("todo")
-	var succ bool
-	var graphID, vertexID uuid.UUID
-
-	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
-	if err != nil {
-		handleError(w, "Failed to fetch graphid from request")
-		return
-	}
-	graphID, err = uuid.Parse(graphID_str)
-	if err != nil {
-		handleError(w, "Failed to parse graphid")
-		return
-	}
-
-	vertexID_str, err := server.Parser.RetrieveParamByName(r, "vertexid")
-	if err != nil {
-		handleError(w, "Failed to fetch vertexid from request")
-		return
-	}
-	edgeID, err = uuid.Parse(edgeID_str)
-	if err != nil {
-		handleError(w, "Failed to parse edgeid")
-		return
-	}
+	//var succ bool
+	//var graphID, vertexID uuid.UUID
+	//
+	//graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
+	//if err != nil {
+	//	handleError(w, "Failed to fetch graphid from request")
+	//	return
+	//}
+	//graphID, err = uuid.Parse(graphID_str)
+	//if err != nil {
+	//	handleError(w, "Failed to parse graphid")
+	//	return
+	//}
+	//
+	//vertexID_str, err := server.Parser.RetrieveParamByName(r, "vertexid")
+	//if err != nil {
+	//	handleError(w, "Failed to fetch vertexid from request")
+	//	return
+	//}
+	//edgeID, err = uuid.Parse(edgeID_str)
+	//if err != nil {
+	//	handleError(w, "Failed to parse edgeid")
+	//	return
+	//}
 }
 
 func (server *Server) addedgeproperty(w http.ResponseWriter, r *http.Request) {
