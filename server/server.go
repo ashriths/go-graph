@@ -66,6 +66,20 @@ func (server *Server) getOrCreateStorageClient(backendAddr string) (*storage.Sto
 	return stClient, nil
 }
 
+func writeResponse(w http.ResponseWriter, data map[string]interface{}) {
+	byteData, err := json.Marshal(data)
+	if err != nil {
+		system.Logln("Failed to marshal response data")
+	}
+	fmt.Fprintf(w, string(byteData))
+}
+
+func handleError(w http.ResponseWriter, msg string) {
+	system.Logln(msg)
+	data := map[string]interface{}{"error": msg, "success": false}
+	writeResponse(w, data)
+}
+
 func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 	var succ bool
 	var data graph.ElementProperty
@@ -73,21 +87,18 @@ func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 
 	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
 	if err != nil {
-		system.Logln("Failed to fetch graphid from request")
-		fmt.Fprintf(w, "Failed to fetch graphid from request")
+		handleError(w, "Failed to fetch graphid from request")
 		return
 	}
 	graphID, err = uuid.Parse(graphID_str)
 	if err != nil {
-		system.Logln("Failed to parse graphid")
-		fmt.Fprintf(w, "Failed to parse graphid")
+		handleError(w, "Failed to parse graphid")
 		return
 	}
 
 	data, err = server.Parser.RetreiveQueryData(r)
 	if err != nil {
-		system.Logln("Failed to parse request body")
-		fmt.Fprintf(w, "Failed to parse request body")
+		handleError(w, "Failed to parse request body")
 		return
 	}
 	vertexid := uuid.New()
@@ -95,8 +106,7 @@ func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 
 	partitionID, err := server.Locator.FindPartition(vertex.Element)
 	if err != nil {
-		system.Logln("Failed to get a partition")
-		fmt.Fprintf(w, "Failed to get a partition")
+		handleError(w, "Failed to get a partition")
 		return
 	}
 
@@ -104,29 +114,35 @@ func (server *Server) addvertex(w http.ResponseWriter, r *http.Request) {
 	for _, backend := range backends {
 		data, err := server.Metadata.GetBackendInformation(backend)
 		if err != nil {
-			system.Logln("Failed to get backend Info")
-			fmt.Fprintf(w, "Failed to get backend Info")
+			handleError(w, "Failed to get backend Info")
 			return
 		}
 		backendAddr := data["address"].(string)
 
 		stClient, err := server.getOrCreateStorageClient(backendAddr)
 		if err != nil {
-			system.Logln("Failed to create a storage client to backend: " + backendAddr)
-			fmt.Fprintf(w, "Failed to create a storage client to backend: " + backendAddr)
+			handleError(w, "Failed to create a storage client to backend: " + backendAddr)
+			return
 		}
 
 		e := stClient.StoreVertex(vertex, &succ)
 		if e != nil || !succ {
-			system.Logln("Failed to add vertex")
-			fmt.Fprintf(w, "Failed to add vertex")
+			handleError(w, "Failed to add vertex to backend")
 			return
 		}
 	}
 
-	err = server.Metadata.SetVertexLocation(graphID, partitionID, vertexid)
+	err = server.Metadata.CreateVertex(graphID, partitionID, vertexid)
+	if err != nil {
+		handleError(w, "Failed to create vertex zNode in zookeeper")
+		return
+	}
+
 	system.Logln("Successfully added vertex")
-	fmt.Fprintf(w, "Successfully added vertex")
+
+	responsedata := map[string]interface{}{"vertexID": vertexid.String()}
+	responsemsg := map[string]interface{}{"msg": "Successfully added vertex", "success": true, "data": responsedata}
+	writeResponse(w, responsemsg)
 }
 
 func (server *Server) deletevertex(w http.ResponseWriter, r *http.Request) {
@@ -179,27 +195,23 @@ func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request
 
 	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
 	if err != nil {
-		system.Logln("Failed to fetch graphid from request")
-		fmt.Fprintf(w, "Failed to fetch graphid from request")
+		handleError(w, "Failed to fetch graphid from request")
 		return
 	}
 	graphID, err = uuid.Parse(graphID_str)
 	if err != nil {
-		system.Logln("Failed to parse graphid: " + graphID_str)
-		fmt.Fprintf(w, "Failed to parse graphid: " + graphID_str)
+		handleError(w, "Failed to parse graphid: " + graphID_str)
 		return
 	}
 
 	vertexID_str, err := server.Parser.RetrieveParamByName(r, "vertexid")
 	if err != nil {
-		system.Logln("Failed to fetch vertexid from request")
-		fmt.Fprintf(w, "Failed to fetch vertexid from request")
+		handleError(w, "Failed to fetch vertexid from request")
 		return
 	}
 	vertexID, err = uuid.Parse(vertexID_str)
 	if err != nil {
-		system.Logln("Failed to parse vertexid: " + vertexID_str)
-		fmt.Fprintf(w, "Failed to parse vertexid: " + vertexID_str)
+		handleError(w, "Failed to parse vertexid: " + vertexID_str)
 		return
 	}
 
@@ -219,17 +231,12 @@ func (server *Server) getvertexproperties(w http.ResponseWriter, r *http.Request
 
 	err, properties := vertex.GetProperties()
 	if err != nil {
-		system.Logln("Failed to fetch vertex properties")
-		fmt.Fprintf(w, "Failed to fetch vertex properties")
+		handleError(w, "Failed to fetch vertex properties")
 		return
 	}
-	response, err := json.Marshal(properties)
-	if err != nil {
-		system.Logln("Failed to marshal data")
-		fmt.Fprintf(w, "Failed to marshal data")
-		return
-	}
-	fmt.Fprintf(w, string(response))
+	responsedata := map[string]interface{}{"VertexProperties": properties}
+	responsemsg := map[string]interface{}{"msg": "Successfully fetches vertex properties", "success": true, "data": responsedata}
+	writeResponse(w, responsemsg)
 }
 
 func (server *Server) getedgeproperties(w http.ResponseWriter, r *http.Request) {
