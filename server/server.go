@@ -3,6 +3,10 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"reflect"
+
 	"github.com/ashriths/go-graph/graph"
 	"github.com/ashriths/go-graph/locator"
 	"github.com/ashriths/go-graph/metadata"
@@ -10,9 +14,6 @@ import (
 	"github.com/ashriths/go-graph/storage"
 	"github.com/ashriths/go-graph/system"
 	"github.com/google/uuid"
-	"log"
-	"net/http"
-	"reflect"
 )
 
 type Server struct {
@@ -169,7 +170,7 @@ func (server *Server) addVertex(w http.ResponseWriter, r *http.Request) {
 func (server *Server) deleteVertex(w http.ResponseWriter, r *http.Request) {
 	// Delete all edges that have destination as this vertex
 	// Then delete the source vertex
-	panic("todo")
+
 }
 
 func (server *Server) addEdge(w http.ResponseWriter, r *http.Request) {
@@ -341,7 +342,7 @@ func (server *Server) getOutEdges(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 	}
-	if edges == nil{
+	if edges == nil {
 		handleError(w, "Failed to fetch edgeid from request")
 		return
 	}

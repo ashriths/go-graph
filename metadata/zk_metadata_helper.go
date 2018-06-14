@@ -166,13 +166,19 @@ func (self *ZkMetadataMapper) deleteZnode(znodePath string) error {
 }
 
 func (self *ZkMetadataMapper) changePartitionInfo(znodePath string, value int32) error {
-	data, statusInfo, err := self.getZnodeData(znodePath)
-	if err != nil {
-		system.Logf("Error while retrieving data stored at path: %s", znodePath)
-		return nil
+	var err error
+	var data map[string]interface{}
+	var statusInfo *zk.Stat
+	data, statusInfo, err = self.getZnodeData(znodePath)
+	for err != nil {
+		system.Logf("Failed to change partition info at path: %s. Trying again...", znodePath)
+		data, statusInfo, err = self.getZnodeData(znodePath)
+		if err != nil {
+			continue
+		}
+		newValue := data["count"].(int32) + value
+		newData := map[string]string{"elementCount": string(newValue)}
+		err = self.setZnodeData(znodePath, newData, statusInfo.Version)
 	}
-	newValue := data["count"].(int32) + value
-	newData := map[string]string{"elementCount": string(newValue)}
-	err = self.setZnodeData(znodePath, newData, statusInfo.Version)
 	return nil
 }
