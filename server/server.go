@@ -288,16 +288,34 @@ func (server *Server) deleteEdge(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, responsemsg)
 }
 
-func (server *Server) updateEdge(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
-}
-
-func (server *Server) updateVertex(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
-}
-
 func (server *Server) getInEdges(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+	//panic("todo")
+	//var edges []graph.Edge
+	//var graphID, vertexId uuid.UUID
+
+	//graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
+	//if err != nil {
+	//	handleError(w, "Failed to fetch graphid from request")
+	//	return
+	//}
+	//graphID, err = uuid.Parse(graphID_str)
+	//if err != nil {
+	//	handleError(w, "Failed to parse graphid")
+	//	return
+	//}
+	//
+	//vertexIdStr, err := server.Parser.RetrieveParamByName(r, "vertexid")
+	//if err != nil {
+	//	handleError(w, "Failed to fetch vertexid from request")
+	//	return
+	//}
+	//vertexId, err = uuid.Parse(vertexIdStr)
+	//if err != nil {
+	//	handleError(w, "Failed to parse vertexid")
+	//	return
+	//}
+
+
 }
 
 func (server *Server) getOutEdges(w http.ResponseWriter, r *http.Request) {
@@ -317,12 +335,12 @@ func (server *Server) getOutEdges(w http.ResponseWriter, r *http.Request) {
 
 	vertexIdStr, err := server.Parser.RetrieveParamByName(r, "vertexid")
 	if err != nil {
-		handleError(w, "Failed to fetch edgeid from request")
+		handleError(w, "Failed to fetch vertexid from request")
 		return
 	}
 	vertexId, err = uuid.Parse(vertexIdStr)
 	if err != nil {
-		handleError(w, "Failed to parse edgeid")
+		handleError(w, "Failed to parse vertexid")
 		return
 	}
 	_, backends, err := server.Metadata.GetVertexLocation(graphID, vertexId)
@@ -354,8 +372,34 @@ func (server *Server) getOutEdges(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) getParentVertices(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+	//panic("todo")
+	//var graphID uuid.UUID
+	//var vertexID uuid.UUID
+	//var vertex graph.Vertex
+	//
+	//graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
+	//if err != nil {
+	//	handleError(w, "Failed to fetch graphid from request")
+	//	return
+	//}
+	//graphID, err = uuid.Parse(graphID_str)
+	//if err != nil {
+	//	handleError(w, "Failed to parse graphid: "+graphID_str)
+	//	return
+	//}
+	//
+	//vertexID_str, err := server.Parser.RetrieveParamByName(r, "vertexid")
+	//if err != nil {
+	//	handleError(w, "Failed to fetch vertexid from request")
+	//	return
+	//}
+	//vertexID, err = uuid.Parse(vertexID_str)
+	//if err != nil {
+	//	handleError(w, "Failed to parse vertexid: "+vertexID_str)
+	//	return
+	//}
 }
+
 
 func (server *Server) getChildVertices(w http.ResponseWriter, r *http.Request) {
 
@@ -474,8 +518,8 @@ func (server *Server) Serve() error {
 	http.HandleFunc("/DeleteVertex", server.deleteVertex)
 	http.HandleFunc("/AddEdge", server.addEdge)
 	http.HandleFunc("/DeleteEdge", server.deleteEdge)
-	http.HandleFunc("/updateVertex", server.updateVertex)
-	http.HandleFunc("/updateEdge", server.updateEdge)
+	//http.HandleFunc("/updateVertex", server.updateVertex)
+	//http.HandleFunc("/updateEdge", server.updateEdge)
 	http.HandleFunc("/GetInEdges", server.getInEdges)
 	http.HandleFunc("/GetOutEdges", server.getOutEdges)
 	http.HandleFunc("/GetParentVertices", server.getParentVertices)
