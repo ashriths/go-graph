@@ -166,7 +166,84 @@ func (server *Server) addVertex(w http.ResponseWriter, r *http.Request) {
 func (server *Server) deleteVertex(w http.ResponseWriter, r *http.Request) {
 	// Delete all edges that have destination as this vertex
 	// Then delete the source vertex
+	var succ bool
+	var graphID, vertexID uuid.UUID
 
+	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
+	if err != nil {
+		handleError(w, "Failed to fetch graphid from request")
+		return
+	}
+	graphID, err = uuid.Parse(graphID_str)
+	if err != nil {
+		handleError(w, "Failed to parse graphid")
+		return
+	}
+
+	vertexID_str, err := server.Parser.RetrieveParamByName(r, "vertexid")
+	if err != nil {
+		handleError(w, "Failed to fetch vertexid from request")
+		return
+	}
+	vertexID, err = uuid.Parse(vertexID_str)
+	if err != nil {
+		handleError(w, "Failed to parse vertexid")
+		return
+	}
+
+	edgeIds, err := server.Metadata.GetVertexInformation(graphID, vertexID)
+	if err != nil {
+		handleError(w, "Failed to get edge ids for vertex")
+		return
+	}
+
+	for edgeIdStr, backends := range edgeIds {
+		for _, backend := range backends.([]string) {
+			stClient, err := server.getOrCreateStorageClient(backend)
+			if err != nil {
+				handleError(w, "Failed to get storage client")
+				return
+			}
+			edgeId, err := uuid.Parse(edgeIdStr)
+			if err != nil {
+				handleError(w, "Failed to parse uuid")
+				return
+			}
+			err = stClient.RemoveEdge(edgeId, &succ)
+			if err != nil || succ == false {
+				handleError(w, "Failed to remove inedges")
+				return
+			}
+		}
+	}
+
+	_, backends, err := server.Metadata.GetVertexLocation(graphID, vertexID)
+	if err != nil {
+		handleError(w, "Failed to get backend infor for vertex")
+		return
+	}
+	for _, backend := range backends {
+		stClient, err := server.getOrCreateStorageClient(backend)
+		if err != nil {
+			handleError(w, "Failed to get storage client")
+			return
+		}
+		err = stClient.RemoveVertex(vertexID, &succ)
+		if err != nil || succ == false {
+			handleError(w, "Failed to remove vertex")
+			return
+		}
+	}
+	err = server.Metadata.DeleteVertex(graphID, vertexID)
+	if err != nil {
+		handleError(w, "Failed to remove vertex from zookeeper")
+		return
+	}
+
+	system.Logln("Successfully deleted vertex")
+
+	responsemsg := map[string]interface{}{"msg": "Successfully deleted vertex", "success": true}
+	writeResponse(w, responsemsg)
 }
 
 func (server *Server) addEdge(w http.ResponseWriter, r *http.Request) {
@@ -236,6 +313,35 @@ func (server *Server) addEdge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//var inedge = map[string][]string{}
+	partitionId, backends, err = server.Metadata.GetVertexLocation(graphID, destId)
+	if err != nil {
+		handleError(w,"Failed to fetch backends for destination vertex")
+		return
+	}
+	var backendInfo []string
+	for _, backend := range backends {
+		data, err := server.Metadata.GetBackendInformation(backend)
+		if err != nil {
+			handleError(w, "Failed to fetch backend info for backend")
+			return
+		}
+		backendInfo = append(backendInfo, data["address"].(string))
+	}
+
+	//inedge[edgeId.String()] = backendInfo
+	err = server.Metadata.UpdateVertexInformation(graphID, destId, edgeId.String(), backendInfo)
+	if err != nil {
+		handleError(w, "Failed to add vertex information")
+		return
+	}
+
+	err = server.Metadata.UpdateEdgeInformation(graphID, edgeId, "dest", destId.String())
+	if err != nil {
+		handleError(w, "Failed to add edge information")
+		return
+	}
+
 	system.Logln("Successfully added Edge")
 
 	responsedata := map[string]interface{}{"edgeId": edgeId.String()}
@@ -278,6 +384,24 @@ func (server *Server) deleteEdge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	destIdStr, err := server.Metadata.GetEdgeInformation(graphID, edgeID)
+	if err != nil {
+		handleError(w, "Failed to get edge information")
+		return
+	}
+
+	destId, err := uuid.Parse(destIdStr["dest"].(string))
+	if err != nil {
+		handleError(w, "Failed to parse uuid")
+		return
+	}
+
+	err = server.Metadata.DeleteVertexInformation(graphID, destId, "dest")
+	if err != nil {
+		handleError(w, "Failed to add vertex information")
+		return
+	}
+
 	system.Logln("Successfully deleted edge")
 
 	responsemsg := map[string]interface{}{"msg": "Successfully deleted edge", "success": true}
@@ -286,32 +410,64 @@ func (server *Server) deleteEdge(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) getInEdges(w http.ResponseWriter, r *http.Request) {
 	//panic("todo")
-	//var edges []graph.Edge
-	//var graphID, vertexId uuid.UUID
+	var edges []graph.Edge
+	var graphID, vertexId uuid.UUID
 
-	//graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
-	//if err != nil {
-	//	handleError(w, "Failed to fetch graphid from request")
-	//	return
-	//}
-	//graphID, err = uuid.Parse(graphID_str)
-	//if err != nil {
-	//	handleError(w, "Failed to parse graphid")
-	//	return
-	//}
-	//
-	//vertexIdStr, err := server.Parser.RetrieveParamByName(r, "vertexid")
-	//if err != nil {
-	//	handleError(w, "Failed to fetch vertexid from request")
-	//	return
-	//}
-	//vertexId, err = uuid.Parse(vertexIdStr)
-	//if err != nil {
-	//	handleError(w, "Failed to parse vertexid")
-	//	return
-	//}
+	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
+	if err != nil {
+		handleError(w, "Failed to fetch graphid from request")
+		return
+	}
+	graphID, err = uuid.Parse(graphID_str)
+	if err != nil {
+		handleError(w, "Failed to parse graphid")
+		return
+	}
 
+	vertexIdStr, err := server.Parser.RetrieveParamByName(r, "vertexid")
+	if err != nil {
+		handleError(w, "Failed to fetch vertexid from request")
+		return
+	}
+	vertexId, err = uuid.Parse(vertexIdStr)
+	if err != nil {
+		handleError(w, "Failed to parse vertexid")
+		return
+	}
 
+	inEdges, err := server.Metadata.GetVertexInformation(graphID, vertexId)
+	if err != nil {
+		handleError(w, "Failed to get InEdgeIDs from zookeeper")
+		return
+	}
+
+	for _, backends:= range inEdges {
+		for _, backend := range backends.([]string) {
+			data, err := server.Metadata.GetBackendInformation(backend)
+			if err != nil {
+				continue
+			}
+			backendAddr := data["address"].(string)
+
+			stClient, err := server.getOrCreateStorageClient(backendAddr)
+			if err != nil {
+				continue
+			}
+			e := stClient.GetOutEdges(vertexId, &edges)
+			if e != nil {
+				continue
+			}
+			break
+		}
+	}
+	if edges == nil {
+		handleError(w, "Failed to fetch edgeid from request")
+		return
+	}
+	system.Logln("Successfully got in edges")
+
+	responsemsg := map[string]interface{}{"msg": "Successfully got in edges", "success": true, "data": edges}
+	writeResponse(w, responsemsg)
 }
 
 func (server *Server) getOutEdges(w http.ResponseWriter, r *http.Request) {
@@ -368,36 +524,192 @@ func (server *Server) getOutEdges(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) getParentVertices(w http.ResponseWriter, r *http.Request) {
-	//panic("todo")
-	//var graphID uuid.UUID
-	//var vertexID uuid.UUID
-	//var vertex graph.Vertex
-	//
-	//graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
-	//if err != nil {
-	//	handleError(w, "Failed to fetch graphid from request")
-	//	return
-	//}
-	//graphID, err = uuid.Parse(graphID_str)
-	//if err != nil {
-	//	handleError(w, "Failed to parse graphid: "+graphID_str)
-	//	return
-	//}
-	//
-	//vertexID_str, err := server.Parser.RetrieveParamByName(r, "vertexid")
-	//if err != nil {
-	//	handleError(w, "Failed to fetch vertexid from request")
-	//	return
-	//}
-	//vertexID, err = uuid.Parse(vertexID_str)
-	//if err != nil {
-	//	handleError(w, "Failed to parse vertexid: "+vertexID_str)
-	//	return
-	//}
+	var edges []graph.Edge
+	var vertices []graph.Vertex
+	var graphID, vertexId uuid.UUID
+
+	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
+	if err != nil {
+		handleError(w, "Failed to fetch graphid from request")
+		return
+	}
+	graphID, err = uuid.Parse(graphID_str)
+	if err != nil {
+		handleError(w, "Failed to parse graphid")
+		return
+	}
+
+	vertexIdStr, err := server.Parser.RetrieveParamByName(r, "vertexid")
+	if err != nil {
+		handleError(w, "Failed to fetch vertexid from request")
+		return
+	}
+	vertexId, err = uuid.Parse(vertexIdStr)
+	if err != nil {
+		handleError(w, "Failed to parse vertexid")
+		return
+	}
+
+	inEdges, err := server.Metadata.GetVertexInformation(graphID, vertexId)
+	if err != nil {
+		handleError(w, "Failed to get InEdgeIDs from zookeeper")
+		return
+	}
+
+	for _, backends:= range inEdges {
+		for _, backend := range backends.([]string) {
+			data, err := server.Metadata.GetBackendInformation(backend)
+			if err != nil {
+				continue
+			}
+			backendAddr := data["address"].(string)
+
+			stClient, err := server.getOrCreateStorageClient(backendAddr)
+			if err != nil {
+				continue
+			}
+			e := stClient.GetOutEdges(vertexId, &edges)
+			if e != nil {
+				continue
+			}
+			break
+		}
+	}
+	if edges == nil {
+		handleError(w, "Failed to fetch edgeid from request")
+		return
+	}
+
+	for _, edge := range edges {
+		err, srcvertex := edge.GetSrcVertex()
+		if err != nil {
+			handleError(w, "Failed to get destination vertex of edge")
+			return
+		}
+
+		var e error
+		_, backends, err := server.Metadata.GetVertexLocation(graphID, srcvertex.GetUUID())
+		for _, backend := range backends {
+			var vertex graph.Vertex
+			data, err := server.Metadata.GetBackendInformation(backend)
+			if err != nil {
+				continue
+			}
+			backendAddr := data["address"].(string)
+
+			stClient, err := server.getOrCreateStorageClient(backendAddr)
+			if err != nil {
+				continue
+			}
+			e = stClient.GetVertexById(srcvertex.GetUUID(), &vertex)
+			if e != nil {
+				continue
+			} else {
+				vertices = append(vertices, vertex)
+				break
+			}
+		}
+		if e != nil {
+			handleError(w, "Failed to get some parent vertices")
+			return
+		}
+	}
+
+	system.Logln("Successfully got parent vertices")
+
+	responsemsg := map[string]interface{}{"msg": "Successfully got parent vertices", "success": true, "data": edges}
+	writeResponse(w, responsemsg)
 }
 
 
 func (server *Server) getChildVertices(w http.ResponseWriter, r *http.Request) {
+	var edges []graph.Edge
+	var vertices []graph.Vertex
+	var graphID, vertexId uuid.UUID
+
+	graphID_str, err := server.Parser.RetrieveParamByName(r, "graphid")
+	if err != nil {
+		handleError(w, "Failed to fetch graphid from request")
+		return
+	}
+	graphID, err = uuid.Parse(graphID_str)
+	if err != nil {
+		handleError(w, "Failed to parse graphid")
+		return
+	}
+
+	vertexIdStr, err := server.Parser.RetrieveParamByName(r, "vertexid")
+	if err != nil {
+		handleError(w, "Failed to fetch vertexid from request")
+		return
+	}
+	vertexId, err = uuid.Parse(vertexIdStr)
+	if err != nil {
+		handleError(w, "Failed to parse vertexid")
+		return
+	}
+	_, backends, err := server.Metadata.GetVertexLocation(graphID, vertexId)
+	for _, backend := range backends {
+		data, err := server.Metadata.GetBackendInformation(backend)
+		if err != nil {
+			continue
+		}
+		backendAddr := data["address"].(string)
+
+		stClient, err := server.getOrCreateStorageClient(backendAddr)
+		if err != nil {
+			continue
+		}
+		e := stClient.GetOutEdges(vertexId, &edges)
+		if e != nil {
+			continue
+		}
+	}
+	if edges == nil {
+		handleError(w, "Failed to fetch edgeid from request")
+		return
+	}
+
+	for _, edge := range edges {
+		err, destvertex := edge.GetDestVertex()
+		if err != nil {
+			handleError(w, "Failed to get destination vertex of edge")
+			return
+		}
+
+		var e error
+		_, backends, err := server.Metadata.GetVertexLocation(graphID, destvertex.GetUUID())
+		for _, backend := range backends {
+			var vertex graph.Vertex
+			data, err := server.Metadata.GetBackendInformation(backend)
+			if err != nil {
+				continue
+			}
+			backendAddr := data["address"].(string)
+
+			stClient, err := server.getOrCreateStorageClient(backendAddr)
+			if err != nil {
+				continue
+			}
+			e = stClient.GetVertexById(destvertex.GetUUID(), &vertex)
+			if e != nil {
+				continue
+			} else {
+				vertices = append(vertices, vertex)
+				break
+			}
+		}
+		if e != nil {
+			handleError(w, "Failed to get some child vertices")
+			return
+		}
+	}
+
+
+	system.Logln("Successfully got child vertices")
+
+	responsemsg := map[string]interface{}{"msg": "Successfully got child vertices", "success": true, "data": vertices}
+	writeResponse(w, responsemsg)
 
 }
 

@@ -229,7 +229,7 @@ func (ccLocator *CCLocator) createPartition(element graph.ElementInterface) (uui
 
 	count := 0
 	for _, backendId := range backends {
-		if count == REPLICATIONFACTOR {
+		if count == common.REPLICATION_FACTOR {
 			break
 		}
 
@@ -247,8 +247,8 @@ func (ccLocator *CCLocator) createPartition(element graph.ElementInterface) (uui
 			count += 1
 		}
 	}
-	if count < REPLICATIONFACTOR {
-		system.Logln("Failed to replicate to ", REPLICATIONFACTOR, " backends")
+	if count < common.REPLICATION_FACTOR {
+		system.Logln("Failed to replicate to ", common.REPLICATION_FACTOR, " backends")
 		return uuid.New(), err
 	}
 	//err = randomLocator.Metadata.SetPartitionInformation(element.GetGraphId(), partitionID)
