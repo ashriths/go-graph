@@ -9,8 +9,10 @@ import (
 
 	"strings"
 
+	"github.com/ashriths/go-graph/common"
 	"github.com/google/uuid"
 	"github.com/samuel/go-zookeeper/zk"
+	"math/rand"
 )
 
 //Constants to be used
@@ -31,13 +33,11 @@ type ZkMetadataMapper struct {
 	Connection *zk.Conn
 	ZkAddrs    []string
 	err        error
-	Watches    map[string]<-chan zk.Event
 }
 
 func NewZkMetadataMapper(ZkAddrs []string) *ZkMetadataMapper {
 	zkMapper := ZkMetadataMapper{
 		ZkAddrs: ZkAddrs,
-		Watches: make(map[string]<-chan zk.Event),
 	}
 	zkMapper.Initialize()
 	return &zkMapper
@@ -64,20 +64,20 @@ func (self *ZkMetadataMapper) Initialize() error {
 	return nil
 }
 
-func (self *ZkMetadataMapper) CreatePartition(graphID uuid.UUID, partitionID uuid.UUID) error {
-	data := map[string]string{"partitionID": partitionID.String()}
-	return self.createZnode(path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionID.String()), data)
+func (self *ZkMetadataMapper) CreatePartition(graphID uuid.UUID, partitionId uuid.UUID) error {
+	data := map[string]interface{}{"partitionId": partitionId.String(), "vertexCount": float64(0)}
+	return self.createZnode(path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionId.String()), data)
 }
 
-func (self *ZkMetadataMapper) CreateVertex(graphID uuid.UUID, partitionID uuid.UUID, vertexID uuid.UUID) error {
-	data := map[string]string{"partitionID": partitionID.String()}
+func (self *ZkMetadataMapper) CreateVertex(graphID uuid.UUID, partitionId uuid.UUID, vertexID uuid.UUID) error {
+	data := map[string]string{"partitionId": partitionId.String()}
 	err := self.createZnode(path.Join(ROOT, GRAPH, graphID.String(), VERTEX, vertexID.String()), data)
 	if err != nil {
 		return err
 	}
-	err = self.IncrementElementCount(graphID, partitionID)
+	err = self.IncrementElementCount(graphID, partitionId)
 	if err != nil {
-		system.Logf("Failed to increment element count at parition :%s", partitionID.String())
+		system.Logf("Failed to increment element count at parition :%s", partitionId.String())
 		return err
 	}
 	return nil
@@ -168,10 +168,10 @@ func (self *ZkMetadataMapper) GetAllPartitions(graphID uuid.UUID) ([]string, err
 	return children, nil
 }
 
-func (self *ZkMetadataMapper) GetPartitionInformation(graphID uuid.UUID, partitionID uuid.UUID) (map[string]interface{}, error) {
-	data, _, err := self.getZnodeData(path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionID.String()))
+func (self *ZkMetadataMapper) GetPartitionInformation(graphID uuid.UUID, partitionId uuid.UUID) (map[string]interface{}, error) {
+	data, _, err := self.getZnodeData(path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionId.String()))
 	if err != nil {
-		system.Logf("Error while retrieving data stored at %s partition", partitionID.String())
+		system.Logf("Error while retrieving data stored at %s partition", partitionId.String())
 		return nil, err
 	}
 	return data, nil
@@ -274,20 +274,20 @@ func (self *ZkMetadataMapper) SetPartitionInformation(graphID uuid.UUID, partiti
 	var exists bool
 	var err error
 
-	znodePath := path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionID.String())
+	znodePath := path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionId.String())
 	exists, err = self.checkZnodeExists(znodePath)
 	if err != nil {
-		system.Logf("Error while checking if %s partition exists", partitionID.String())
+		system.Logf("Error while checking if %s partition exists", partitionId.String())
 		return err
 	}
 	if exists != true {
-		system.Logf("%s partition does not exist", partitionID.String())
+		system.Logf("%s partition does not exist", partitionId.String())
 		return fmt.Errorf("Partition does not exist")
 	}
 
 	err = self.setZnodeData(znodePath, data, DEFAULTVERSION)
 	if err != nil {
-		system.Logf("Error while setting data at %s partition", partitionID.String())
+		system.Logf("Error while setting data at %s partition", partitionId.String())
 		return err
 	}
 	return nil
@@ -303,35 +303,33 @@ func (self *ZkMetadataMapper) GetBackendInformation(backendID string) (map[strin
 }
 
 // GetBackendsForPartition : Add backends to Partitions
-func (self *ZkMetadataMapper) GetBackendsForPartition(graphID uuid.UUID, partitionID uuid.UUID) ([]string, error) {
-	children, err := self.getChildren(path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionID.String()))
+func (self *ZkMetadataMapper) GetBackendsForPartition(graphID uuid.UUID, partitionId uuid.UUID) ([]string, error) {
+	children, err := self.getChildren(path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionId.String()))
 	if err != nil {
-		system.Logf("Error while getting %s paritionID", partitionID)
+		system.Logf("Error while getting %s paritionID", partitionId)
 		return nil, err
 	}
 	return children, nil
 }
 
-func (self *ZkMetadataMapper) AddBackendToPartition(graphID uuid.UUID, partitionID uuid.UUID, backendID string) ([]string, error) {
+func (self *ZkMetadataMapper) AddBackendToPartition(graphID uuid.UUID, partitionId uuid.UUID, backendID string) ([]string, interface{}, error) {
 	var err error
 	var liveBackends []string
 	watch := make(<-chan zk.Event)
-	err = self.createZnode(path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionID.String(), backendID), EMPTY_DATA)
+	err = self.createZnode(path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionId.String(), backendID), EMPTY_DATA)
 	if err != nil {
-		system.Logf("Error while adding %s backend to %s partition", backendID, partitionID.String())
-		return nil, err
+		system.Logf("Error while adding %s backend to %s partition", backendID, partitionId.String())
+		return nil, nil, err
 	}
-	backendNode := path.Join(ROOT, GRAPH, graphID.String(), partitionID.String())
+	backendNode := path.Join(ROOT, GRAPH, graphID.String(), partitionId.String())
 
 	// pass the full path upto node whose children have to be watched
 	liveBackends, watch, err = self.GetWatchOnChildren(backendNode)
 	if err != nil {
-		system.Logf("Error while setting a watch on %s", backendID)
-		return nil, err
+		system.Logln("Error while setting a watch on ", backendID, err)
+		return nil, nil, err
 	}
-	self.Watches[partitionID.String()] = watch
-	go self.startWatchingPartition(partitionID, watch)
-	return liveBackends, err
+	return liveBackends, watch, err
 }
 
 // @param : backendNode - full path of node whose children need to be watched
@@ -349,30 +347,30 @@ func must(err error) {
 }
 
 func (self *ZkMetadataMapper) GetVertexLocation(graphID uuid.UUID, vertexID uuid.UUID) (*uuid.UUID, []string, error) {
-	var partitionID string
+	var partitionId string
 	var children []string
 	var err error
 
-	// get partitionID from graphID and vertexID
+	// get partitionId from graphID and vertexID
 	znodePath := path.Join(ROOT, GRAPH, graphID.String(), VERTEX, vertexID.String())
 	data, _, err := self.getZnodeData(znodePath)
 	if err != nil {
 		system.Logf("Error while getting %s vertex", vertexID.String())
 		return nil, nil, err
 	}
-	partitionID = data["partitionID"].(string)
+	partitionId = data["partitionId"].(string)
 
 	//  get backends from paritionID
-	znodePath = path.Join(ROOT, GRAPH, graphID.String(), "partitions", partitionID)
+	znodePath = path.Join(ROOT, GRAPH, graphID.String(), "partitions", partitionId)
 	children, err = self.getChildren(znodePath)
 	if err != nil {
-		system.Logf("Error while getting %s paritionID", partitionID)
+		system.Logf("Error while getting %s paritionID", partitionId)
 		return nil, nil, err
 	}
 
-	partitionUUID, err := uuid.Parse(partitionID)
+	partitionUUID, err := uuid.Parse(partitionId)
 	if err != nil {
-		system.Logf("Error while parsing %s paritionID", partitionID)
+		system.Logf("Error while parsing %s paritionID", partitionId)
 		return nil, nil, err
 	}
 	//sort.Strings(children)
@@ -393,7 +391,7 @@ func (self *ZkMetadataMapper) GetVertexLocation(graphID uuid.UUID, vertexID uuid
 	return &partitionUUID, children, err
 }
 
-func (self *ZkMetadataMapper) SetVertexLocation(graphID uuid.UUID, partitionID uuid.UUID, vertexID uuid.UUID) error {
+func (self *ZkMetadataMapper) SetVertexLocation(graphID uuid.UUID, partitionId uuid.UUID, vertexID uuid.UUID) error {
 	//conn := connect(self.Connection, self.err)
 	//var buffer bytes.Buffer
 	var exists bool
@@ -410,9 +408,9 @@ func (self *ZkMetadataMapper) SetVertexLocation(graphID uuid.UUID, partitionID u
 		return fmt.Errorf("Vertex does not exist")
 	}
 
-	err = self.setZnodeData(znodePath, map[string]string{"partitionID": partitionID.String()}, DEFAULTVERSION)
+	err = self.setZnodeData(znodePath, map[string]string{"partitionId": partitionId.String()}, DEFAULTVERSION)
 	if err != nil {
-		system.Logf("Error while setting %s vertex with %s paritionID", vertexID.String(), partitionID.String())
+		system.Logf("Error while setting %s vertex with %s paritionID", vertexID.String(), partitionId.String())
 		return err
 	}
 	return nil
@@ -441,23 +439,14 @@ func (self *ZkMetadataMapper) SetEdgeLocation(graphID uuid.UUID, edgeID uuid.UUI
 		system.Logf("Failed to set data for znode: %s", znodePath)
 		return err
 	}
-
 	return nil
 }
 
-func (self *ZkMetadataMapper) startWatchingPartition(partitionID uuid.UUID, watch <-chan zk.Event) {
-	for {
-		evt := <-watch
-		system.Logln("Watch fired for ", partitionID.String(), evt.Err)
-		//TODO: Call replication here
-	}
-}
-
 func (self *ZkMetadataMapper) DeleteVertex(graphID uuid.UUID, vertexID uuid.UUID) error {
-	var partitionID *uuid.UUID
+	var partitionId *uuid.UUID
 	znodePath := path.Join(ROOT, GRAPH, graphID.String(), VERTEX, vertexID.String())
 
-	partitionID, _, err := self.GetVertexLocation(graphID, vertexID)
+	partitionId, _, err := self.GetVertexLocation(graphID, vertexID)
 	if err != nil {
 		system.Logf("Failed to get partition of vertex: %s", vertexID.String())
 		return err
@@ -468,9 +457,9 @@ func (self *ZkMetadataMapper) DeleteVertex(graphID uuid.UUID, vertexID uuid.UUID
 		return err
 	}
 
-	err = self.DecrementElementCount(graphID, *partitionID)
+	err = self.DecrementElementCount(graphID, *partitionId)
 	if err != nil {
-		system.Logf("Failed to decrement Element count at partition: %s", (*partitionID).String())
+		system.Logf("Failed to decrement Element count at partition: %s", (*partitionId).String())
 		return err
 	}
 	return nil
@@ -481,14 +470,43 @@ func (self *ZkMetadataMapper) DeleteEdge(graphID uuid.UUID, edgeID uuid.UUID) er
 	return self.deleteZnode(znodePath)
 }
 
-func (self *ZkMetadataMapper) IncrementElementCount(graphID uuid.UUID, partitionID uuid.UUID) error {
-	znodePath := path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionID.String())
+func (self *ZkMetadataMapper) IncrementElementCount(graphID uuid.UUID, partitionId uuid.UUID) error {
+	znodePath := path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionId.String())
 	return self.changePartitionInfo(znodePath, 1)
 }
 
-func (self *ZkMetadataMapper) DecrementElementCount(graphID uuid.UUID, partitionID uuid.UUID) error {
-	znodePath := path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionID.String())
+func (self *ZkMetadataMapper) DecrementElementCount(graphID uuid.UUID, partitionId uuid.UUID) error {
+	znodePath := path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionId.String())
 	return self.changePartitionInfo(znodePath, -1)
+}
+
+func (self *ZkMetadataMapper) FindNewBackendForPartition(graphID uuid.UUID, partitionId uuid.UUID) (string, error) {
+	backends, err := self.GetAllBackends()
+	var back string
+	if err != nil {
+		return "", err
+	}
+	currBacks, err := self.GetBackendsForPartition(graphID, partitionId)
+	if err != nil {
+		return "", err
+	}
+	if len(backends) < common.REPLICATION_FACTOR {
+		return "", fmt.Errorf("Not enough  backends")
+	}
+	for {
+		ind := rand.Intn(len(backends) - 1)
+		back = backends[ind]
+		new := true
+		for _, v := range currBacks {
+			if back == v {
+				new = false
+			}
+		}
+		if new {
+			break
+		}
+	}
+	return back, nil
 }
 
 var _ Metadata = new(ZkMetadataMapper)

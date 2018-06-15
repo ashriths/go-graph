@@ -30,10 +30,6 @@ type ServerConfig struct {
 	Ready           chan<- bool
 }
 
-const (
-	REPLICATION_FACTOR = 3
-)
-
 func NewZookeeperServer(config *ServerConfig) *Server {
 	zkConnMap := &metadata.ZkMetadataMapper{ZkAddrs: config.MetadataServers}
 	locator := &locator.RandomLocator{Metadata: zkConnMap}

@@ -1,10 +1,14 @@
 package storage
 
 import (
+	"container/list"
+	"fmt"
 	"github.com/ashriths/go-graph/graph"
 	"github.com/ashriths/go-graph/metadata"
 	"github.com/ashriths/go-graph/system"
 	"github.com/google/uuid"
+	"github.com/samuel/go-zookeeper/zk"
+	"strings"
 )
 
 type InMemoryIOMapper struct {
@@ -71,12 +75,12 @@ func (self *InMemoryIOMapper) RemoveVertex(vertexId uuid.UUID, success *bool) er
 func (self *InMemoryIOMapper) GetOutEdges(vertexId uuid.UUID, edges *[]graph.Edge) error {
 	var edge graph.Edge
 	var _edges []graph.Edge
-	i := self.Memory.Index.VertexIndex[vertexId.String()].Front()
-	for i != nil{
+	i := self.Memory.Index.VertexOutEdgeIndex[vertexId.String()].Front()
+	for i != nil {
 		u, _ := uuid.Parse(i.Value.(EdgeIndex).Id)
 
 		e := self.GetEdgeById(u, &edge)
-		if e != nil{
+		if e != nil {
 			continue
 		}
 		_edges = append(_edges, edge)
@@ -87,7 +91,26 @@ func (self *InMemoryIOMapper) GetOutEdges(vertexId uuid.UUID, edges *[]graph.Edg
 }
 
 func (self *InMemoryIOMapper) GetInEdges(vertexId uuid.UUID, edges *[]graph.Edge) error {
-	panic("implement me")
+	var _edges []graph.Edge
+	var edge graph.Edge
+	var e error
+	var edgeId uuid.UUID
+	edgeMap := self.Memory.Index.EdgeIndex
+	for k, v := range edgeMap {
+		if v == vertexId.String() && strings.HasSuffix(k, "::"+DEST_PREFIX) {
+			edgeId, e = uuid.Parse(strings.Split(k, "::")[0])
+			if e != nil {
+				return e
+			}
+			e = self.GetEdgeById(edgeId, &edge)
+			if e != nil {
+				return e
+			}
+			_edges = append(_edges, edge)
+		}
+	}
+	*edges = _edges
+	return nil
 }
 
 func (self *InMemoryIOMapper) UpdateProperties(element *graph.Element, success *bool) error {
@@ -98,9 +121,82 @@ func (self *InMemoryIOMapper) RemoveEdge(edge uuid.UUID, succ *bool) error {
 	panic("implement me")
 }
 
+func (self *InMemoryIOMapper) UpdateReplica(data interface{}, succ *bool) error {
+	self.Memory.kvStore.dataLock.Lock()
+	defer self.Memory.kvStore.dataLock.Unlock()
+	switch v := data.(type) {
+	case map[string]string:
+		self.Memory.kvStore.data = v
+	case map[string]*list.List:
+		self.Memory.kvStore.listData = v
+	default:
+		*succ = false
+		return fmt.Errorf("Invalid data type")
+	}
+	*succ = true
+	return nil
+}
+
 func (self *InMemoryIOMapper) RegisterToHostPartition(ids []uuid.UUID, succ *bool) error {
-	_, e := self.Metadata.AddBackendToPartition(ids[0], ids[1], self.BackendId)
+	_, watch, e := self.Metadata.AddBackendToPartition(ids[0], ids[1], self.BackendId)
+	if e != nil {
+		return e
+	}
+	go self.startWatchingPartition(ids[0], ids[1], watch)
 	return e
+}
+
+func (self *InMemoryIOMapper) startWatchingPartition(graphId uuid.UUID, partitionId uuid.UUID, watch interface{}) {
+	var _watch <-chan zk.Event
+	_watch = watch.(<-chan zk.Event)
+	for {
+		evt := <-_watch
+		system.Logln("Watch fired for ", partitionId.String(), evt.Err)
+		newBack, e := self.Metadata.FindNewBackendForPartition(graphId, partitionId)
+		if e != nil {
+			system.Logln("Cannot get new partition to replicate", e)
+		}
+		e = self.ReplicateToBackend(graphId, partitionId, newBack)
+		if e != nil {
+			system.Logln("Error while replicating. ", e)
+		}
+	}
+}
+
+func (self *InMemoryIOMapper) ReplicateToBackend(graphId uuid.UUID, partitionID uuid.UUID, backendId string) error {
+	self.Memory.kvStore.dataLock.Lock()
+	defer self.Memory.kvStore.dataLock.Unlock()
+	var succ bool
+	var err error
+	info, err := self.Metadata.GetBackendInformation(backendId)
+	if err != nil {
+		system.Logln("Failed to fetch backend Info")
+		return err
+	}
+	backendAddr := info["address"].(string)
+	client := NewStorageClient(backendAddr)
+	err = client.UpdateReplica(self.Memory.kvStore.data, &succ)
+	if err != nil {
+		return err
+	}
+	if !succ {
+		return fmt.Errorf("Unable to update replica")
+	}
+	err = client.UpdateReplica(self.Memory.kvStore.listData, &succ)
+	if err != nil {
+		return err
+	}
+	if !succ {
+		return fmt.Errorf("Unable to update replica")
+	}
+	err = client.RegisterToHostPartition([]uuid.UUID{graphId, partitionID}, &succ)
+	if err != nil {
+		return err
+	}
+	if !succ {
+		return fmt.Errorf("Unable to make the other replica register to host")
+	}
+	return nil
 }
 
 var _ IOMapper = new(InMemoryIOMapper)

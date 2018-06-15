@@ -10,7 +10,7 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
-var ZK_TIMEOUT = 30 * time.Second
+var ZK_TIMEOUT = 5 * time.Second
 
 func (self *ZkMetadataMapper) getChildren(path string) ([]string, error) {
 	self.connect()
@@ -173,12 +173,10 @@ func (self *ZkMetadataMapper) changePartitionInfo(znodePath string, value int32)
 	for err != nil {
 		system.Logf("Failed to change partition info at path: %s. Trying again...", znodePath)
 		data, statusInfo, err = self.getZnodeData(znodePath)
-		if err != nil {
-			continue
-		}
-		newValue := data["count"].(int32) + value
-		newData := map[string]string{"elementCount": string(newValue)}
-		err = self.setZnodeData(znodePath, newData, statusInfo.Version)
-	}
+		if err != nil{
+	continue}
+	newValue := data["vertexCount"].(float64) + float64( value)
+	data["vertexCount"] =newValue
+	err = self.setZnodeData(znodePath, data, statusInfo.Version)}
 	return nil
 }

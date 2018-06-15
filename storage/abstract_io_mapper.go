@@ -22,4 +22,6 @@ type IOMapper interface {
 	RemoveEdge(edge uuid.UUID, succ *bool) error
 
 	RegisterToHostPartition(ids []uuid.UUID, succ *bool) error
+
+	UpdateReplica(data interface{}, succ *bool) error
 }

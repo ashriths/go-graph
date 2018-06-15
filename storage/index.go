@@ -14,11 +14,12 @@ const (
 )
 
 type Index struct {
-	VertexIndex      map[string]*list.List
-	EdgeIndex        map[string]string
-	GraphVertexIndex map[string]*list.List
-	GraphEdgeIndex   map[string]*list.List
-	indexLock        sync.Mutex
+	VertexOutEdgeIndex map[string]*list.List
+	VertexInEdgeIndex  map[string]*list.List
+	EdgeIndex          map[string]string
+	GraphVertexIndex   map[string]*list.List
+	GraphEdgeIndex     map[string]*list.List
+	indexLock          sync.Mutex
 }
 
 type EdgeIndex struct {
@@ -28,10 +29,10 @@ type EdgeIndex struct {
 
 func NewIndex() *Index {
 	return &Index{
-		VertexIndex:      make(map[string]*list.List),
-		EdgeIndex:        make(map[string]string),
-		GraphVertexIndex: make(map[string]*list.List),
-		GraphEdgeIndex:   make(map[string]*list.List),
+		VertexOutEdgeIndex: make(map[string]*list.List),
+		EdgeIndex:          make(map[string]string),
+		GraphVertexIndex:   make(map[string]*list.List),
+		GraphEdgeIndex:     make(map[string]*list.List),
 	}
 }
 
@@ -39,7 +40,8 @@ func (self *Index) CreateVertexIndex(vertex *graph.Vertex) error {
 	self.indexLock.Lock()
 	defer self.indexLock.Unlock()
 
-	self.VertexIndex[vertex.GetUUID().String()] = list.New()
+	// Store all outgoing edges
+	self.VertexOutEdgeIndex[vertex.GetUUID().String()] = list.New()
 	system.Logln(vertex.Json())
 
 	//_, ok := self.GraphVertexIndex[vertex.GetGraphId().String()]
@@ -58,7 +60,8 @@ func (self *Index) CreateEdgeIndex(edge *graph.Edge) error {
 	key := edge.GetUUID().String() + "::" + SRC_PREFIX
 	self.EdgeIndex[key] = edge.SrcVertex.String()
 
-	self.VertexIndex[edge.SrcVertex.String()].PushBack(EdgeIndex{
+	// Add edge to Vertex => OutEdge Index
+	self.VertexOutEdgeIndex[edge.SrcVertex.String()].PushBack(EdgeIndex{
 		Name: edge.Name,
 		Id:   edge.GetUUID().String(),
 	})
@@ -72,8 +75,8 @@ func (self *Index) RemoveVertexIndex(vertexId uuid.UUID) error {
 	self.indexLock.Lock()
 	defer self.indexLock.Unlock()
 
-	outEdges := self.VertexIndex[vertexId.String()]
-	delete(self.VertexIndex, vertexId.String())
+	outEdges := self.VertexOutEdgeIndex[vertexId.String()]
+	delete(self.VertexOutEdgeIndex, vertexId.String())
 
 	//Remove from EdgeIndex
 	i := outEdges.Front()
@@ -97,3 +100,5 @@ func (self *Index) RemoveEdgeIndex(edgeId uuid.UUID) error {
 	self.protectedRemoveEdgeIndex(edgeId.String())
 	return nil
 }
+
+//TODO: Recreate Index on Failure

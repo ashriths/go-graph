@@ -1,6 +1,7 @@
 package locator
 
 import (
+	"github.com/ashriths/go-graph/common"
 	"github.com/ashriths/go-graph/graph"
 	"github.com/ashriths/go-graph/metadata"
 	"github.com/ashriths/go-graph/storage"
@@ -13,7 +14,6 @@ import (
 )
 
 const (
-	REPLICATIONFACTOR      = 3
 	ELEMENTS_PER_PARTITION = 10
 )
 
@@ -53,7 +53,7 @@ func (randomLocator *RandomLocator) createPartition(element graph.ElementInterfa
 
 	count := 0
 	for _, backendId := range backends {
-		if count == REPLICATIONFACTOR {
+		if count == common.REPLICATION_FACTOR {
 			break
 		}
 
@@ -71,8 +71,8 @@ func (randomLocator *RandomLocator) createPartition(element graph.ElementInterfa
 			count += 1
 		}
 	}
-	if count < REPLICATIONFACTOR {
-		system.Logln("Failed to replicate to ", REPLICATIONFACTOR, " backends")
+	if count < common.REPLICATION_FACTOR {
+		system.Logln("Failed to replicate to ", common.REPLICATION_FACTOR, " backends")
 		return uuid.New(), err
 	}
 	//err = randomLocator.Metadata.SetPartitionInformation(element.GetGraphId(), partitionID)
@@ -99,7 +99,7 @@ func (randomLocator *RandomLocator) FindPartition(element graph.ElementInterface
 		for _, partition := range partitions {
 			partitionUUID, _ := uuid.Parse(partition)
 			data, _ := randomLocator.Metadata.GetPartitionInformation(element.GetGraphId(), partitionUUID)
-			if data["elementCount"].(int) < ELEMENTS_PER_PARTITION {
+			if data["vertexCount"].(float64) < ELEMENTS_PER_PARTITION {
 				partitionsWithSpaceArr = append(partitionsWithSpaceArr, partitionUUID)
 			}
 		}

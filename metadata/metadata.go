@@ -56,9 +56,11 @@ type Metadata interface {
 	GetVertexInformation(graphID uuid.UUID, vertexID uuid.UUID) (map[string]interface{}, error)
 
 	//adds a backend to a partition
-	AddBackendToPartition(graphID uuid.UUID, partitionID uuid.UUID, backendID string) ([]string, error)
+	AddBackendToPartition(graphID uuid.UUID, partitionID uuid.UUID, backendID string) ([]string, interface{}, error)
 	//increment count of number of edges/vertices in a partition
 	IncrementElementCount(graphID uuid.UUID, partitionID uuid.UUID) error
 	//decrement count of number of edges/vertices in a partition
 	DecrementElementCount(graphID uuid.UUID, partitionID uuid.UUID) error
+
+	FindNewBackendForPartition(graphID uuid.UUID, partitionID uuid.UUID) (string, error)
 }

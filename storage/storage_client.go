@@ -89,4 +89,8 @@ func (self *StorageClient) GetInEdges(vertexId uuid.UUID, edges *[]graph.Edge) e
 	return self.Call("Storage.GetInEdges", vertexId, edges)
 }
 
+func (self *StorageClient) UpdateReplica(data interface{}, succ *bool) error {
+	return self.Call("Storage.UpdateReplica", data, succ)
+}
+
 var _ IOMapper = new(StorageClient)
