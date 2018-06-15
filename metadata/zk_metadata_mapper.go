@@ -177,6 +177,99 @@ func (self *ZkMetadataMapper) GetPartitionInformation(graphID uuid.UUID, partiti
 	return data, nil
 }
 
+func (self *ZkMetadataMapper) UpdateVertexInformation(graphID uuid.UUID, vertexID uuid.UUID, key interface{}, value interface{}) error {
+	var err error
+	var exists bool
+	var curData map[string]interface{}
+	var statusInfo *zk.Stat
+
+	znodePath := path.Join(ROOT, GRAPH, graphID.String(), VERTEX, vertexID.String())
+	for {
+		exists, err = self.checkZnodeExists(znodePath)
+		if err != nil {
+			system.Logf("Error while checking if %s vertex exists", vertexID.String())
+			return err
+		}
+		if exists != true {
+			system.Logf("%s vertex does not exist", vertexID.String())
+			return fmt.Errorf("Partition does not exist")
+		}
+		curData, statusInfo, err = self.getZnodeData(znodePath)
+		if err != nil {
+			system.Logf("Error while retrieving data stored at %s vertex", vertexID.String())
+			return err
+		}
+		curData[key.(string)] = value.(string)
+		err = self.setZnodeData(znodePath, curData, statusInfo.Version)
+		if err != nil {
+			system.Logf("Error while updating data at %s vertex. Trying again..", vertexID.String())
+			//err = self.setZnodeData(znodePath, curData, statusInfo.Version)
+		} else {
+			system.Logf("Succesfully updated data at vertex: %s", vertexID.String())
+			break
+		}
+	}
+	return nil
+}
+
+func (self *ZkMetadataMapper) DeleteVertexInformation(graphID uuid.UUID, vertexID uuid.UUID, key interface{}) error {
+	var err error
+	var exists bool
+	var curData map[string]interface{}
+	var statusInfo *zk.Stat
+
+	znodePath := path.Join(ROOT, GRAPH, graphID.String(), VERTEX, vertexID.String())
+	for {
+		exists, err = self.checkZnodeExists(znodePath)
+		if err != nil {
+			system.Logf("Error while checking if %s vertex exists", vertexID.String())
+			return err
+		}
+		if exists != true {
+			system.Logf("%s vertex does not exist", vertexID.String())
+			return fmt.Errorf("Partition does not exist")
+		}
+		curData, statusInfo, err = self.getZnodeData(znodePath)
+		if err != nil {
+			system.Logf("Error while retrieving data stored at %s vertex", vertexID.String())
+			return err
+		}
+		delete(curData, key.(string))
+		err = self.setZnodeData(znodePath, curData, statusInfo.Version)
+		if err != nil {
+			system.Logf("Error while deleting data at %s vertex. Trying again..", vertexID.String())
+			//err = self.setZnodeData(znodePath, curData, statusInfo.Version)
+		} else {
+			system.Logf("Succesfully deleted data at vertex: %s", vertexID.String())
+			break
+		}
+	}
+	return nil
+}
+
+func (self *ZkMetadataMapper) GetVertexInformation(graphID uuid.UUID, vertexID uuid.UUID) (map[string]interface{}, error) {
+	var err error
+	var exists bool
+	var curData map[string]interface{}
+
+	znodePath := path.Join(ROOT, GRAPH, graphID.String(), VERTEX, vertexID.String())
+	exists, err = self.checkZnodeExists(znodePath)
+	if err != nil {
+		system.Logf("Error while checking if %s vertex exists", vertexID.String())
+		return nil, err
+	}
+	if exists != true {
+		system.Logf("%s vertex does not exist", vertexID.String())
+		return nil, fmt.Errorf("Partition does not exist")
+	}
+	curData, _, err = self.getZnodeData(znodePath)
+	if err != nil {
+		system.Logf("Error while retrieving data stored at %s vertex", vertexID.String())
+		return nil, err
+	}
+	return curData, err
+}
+
 func (self *ZkMetadataMapper) SetPartitionInformation(graphID uuid.UUID, partitionID uuid.UUID, data interface{}) error {
 	var exists bool
 	var err error
