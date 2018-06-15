@@ -54,6 +54,10 @@ type Metadata interface {
 	DeleteVertexInformation(graphID uuid.UUID, vertexID uuid.UUID, key interface{}) error
 	// returns the data at a vertex Znode
 	GetVertexInformation(graphID uuid.UUID, vertexID uuid.UUID) (map[string]interface{}, error)
+	//  updates the data at an Edge Znode
+	UpdateEdgeInformation(graphID uuid.UUID, edgeID uuid.UUID, key interface{}, value interface{}) error
+	// returns the data at a vertex Znode
+	GetEdgeInformation(graphID uuid.UUID, edgeID uuid.UUID) (map[string]interface{}, error)
 
 	//adds a backend to a partition
 	AddBackendToPartition(graphID uuid.UUID, partitionID uuid.UUID, backendID string) ([]string, interface{}, error)

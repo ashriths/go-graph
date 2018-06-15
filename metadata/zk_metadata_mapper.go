@@ -9,10 +9,11 @@ import (
 
 	"strings"
 
+	"math/rand"
+
 	"github.com/ashriths/go-graph/common"
 	"github.com/google/uuid"
 	"github.com/samuel/go-zookeeper/zk"
-	"math/rand"
 )
 
 //Constants to be used
@@ -212,6 +213,40 @@ func (self *ZkMetadataMapper) UpdateVertexInformation(graphID uuid.UUID, vertexI
 	return nil
 }
 
+func (self *ZkMetadataMapper) UpdateEdgeInformation(graphID uuid.UUID, edgeID uuid.UUID, key interface{}, value interface{}) error {
+	var err error
+	var exists bool
+	var curData map[string]interface{}
+	var statusInfo *zk.Stat
+
+	znodePath := path.Join(ROOT, GRAPH, graphID.String(), EDGE, edgeID.String())
+	for {
+		exists, err = self.checkZnodeExists(znodePath)
+		if err != nil {
+			system.Logf("Error while checking if %s edge exists", edgeID.String())
+			return err
+		}
+		if exists != true {
+			system.Logf("%s edge does not exist", edgeID.String())
+			return fmt.Errorf("Partition does not exist")
+		}
+		curData, statusInfo, err = self.getZnodeData(znodePath)
+		if err != nil {
+			system.Logf("Error while retrieving data stored at %s edge", edgeID.String())
+			return err
+		}
+		curData[key.(string)] = value.(string)
+		err = self.setZnodeData(znodePath, curData, statusInfo.Version)
+		if err != nil {
+			system.Logf("Error while updating data at %s edge. Trying again..", edgeID.String())
+		} else {
+			system.Logf("Succesfully updated data at edge: %s", edgeID.String())
+			break
+		}
+	}
+	return nil
+}
+
 func (self *ZkMetadataMapper) DeleteVertexInformation(graphID uuid.UUID, vertexID uuid.UUID, key interface{}) error {
 	var err error
 	var exists bool
@@ -247,6 +282,29 @@ func (self *ZkMetadataMapper) DeleteVertexInformation(graphID uuid.UUID, vertexI
 	return nil
 }
 
+func (self *ZkMetadataMapper) GetEdgeInformation(graphID uuid.UUID, edgeID uuid.UUID) (map[string]interface{}, error) {
+	var err error
+	var exists bool
+	var curData map[string]interface{}
+
+	znodePath := path.Join(ROOT, GRAPH, graphID.String(), EDGE, edgeID.String())
+	exists, err = self.checkZnodeExists(znodePath)
+	if err != nil {
+		system.Logf("Error while checking if %s edge exists", edgeID.String())
+		return nil, err
+	}
+	if exists != true {
+		system.Logf("%s edge does not exist", edgeID.String())
+		return nil, fmt.Errorf("Edge does not exist")
+	}
+	curData, _, err = self.getZnodeData(znodePath)
+	if err != nil {
+		system.Logf("Error while retrieving data stored at %s edge", edgeID.String())
+		return nil, err
+	}
+	return curData, err
+}
+
 func (self *ZkMetadataMapper) GetVertexInformation(graphID uuid.UUID, vertexID uuid.UUID) (map[string]interface{}, error) {
 	var err error
 	var exists bool
@@ -260,7 +318,7 @@ func (self *ZkMetadataMapper) GetVertexInformation(graphID uuid.UUID, vertexID u
 	}
 	if exists != true {
 		system.Logf("%s vertex does not exist", vertexID.String())
-		return nil, fmt.Errorf("Partition does not exist")
+		return nil, fmt.Errorf("Edge does not exist")
 	}
 	curData, _, err = self.getZnodeData(znodePath)
 	if err != nil {
@@ -274,20 +332,20 @@ func (self *ZkMetadataMapper) SetPartitionInformation(graphID uuid.UUID, partiti
 	var exists bool
 	var err error
 
-	znodePath := path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionId.String())
+	znodePath := path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionID.String())
 	exists, err = self.checkZnodeExists(znodePath)
 	if err != nil {
-		system.Logf("Error while checking if %s partition exists", partitionId.String())
+		system.Logf("Error while checking if %s partition exists", partitionID.String())
 		return err
 	}
 	if exists != true {
-		system.Logf("%s partition does not exist", partitionId.String())
+		system.Logf("%s partition does not exist", partitionID.String())
 		return fmt.Errorf("Partition does not exist")
 	}
 
 	err = self.setZnodeData(znodePath, data, DEFAULTVERSION)
 	if err != nil {
-		system.Logf("Error while setting data at %s partition", partitionId.String())
+		system.Logf("Error while setting data at %s partition", partitionID.String())
 		return err
 	}
 	return nil
