@@ -285,7 +285,8 @@ func (server *Server) addEdge(w http.ResponseWriter, r *http.Request) {
 	edgeId := uuid.New()
 	edge := graph.E(graphID, edgeId, srcId, destId, edgeName, data)
 
-	var srcVertex *graph.Vertex
+	var srcVertex graph.Vertex
+	foundSrcVertex := false
 	_, srcbackends, err := server.Metadata.GetVertexLocation(graphID, srcId)
 	for _, backend := range srcbackends {
 		data, err := server.Metadata.GetBackendInformation(backend)
@@ -298,16 +299,17 @@ func (server *Server) addEdge(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			continue
 		}
-
-		e := stClient.GetVertexById(srcId, srcVertex)
+		e := stClient.GetVertexById(srcId, &srcVertex)
 		if e != nil {
+			system.Logln("Error getting src Vertex ", e)
 			continue
 		} else {
+			foundSrcVertex = true
 			break
 		}
 	}
 
-	if srcVertex == nil {
+	if !foundSrcVertex {
 		handleError(w, "Failed to get source vertex info")
 		return
 	}
@@ -337,7 +339,7 @@ func (server *Server) addEdge(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		e := stClient.StoreVertex(srcVertex, &succ)
+		e := stClient.StoreVertex(&srcVertex, &succ)
 		if e != nil || !succ {
 			handleError(w, "Failed to add vertex to backend")
 			return

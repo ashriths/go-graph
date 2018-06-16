@@ -364,7 +364,7 @@ func (self *ZkMetadataMapper) GetBackendInformation(backendID string) (map[strin
 func (self *ZkMetadataMapper) GetBackendsForPartition(graphID uuid.UUID, partitionId uuid.UUID) ([]string, error) {
 	children, err := self.getChildren(path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionId.String()))
 	if err != nil {
-		system.Logf("Error while getting %s paritionID", partitionId)
+		system.Logln("Error while getting paritionID", partitionId, err)
 		return nil, err
 	}
 	return children, nil
