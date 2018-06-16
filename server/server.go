@@ -351,6 +351,27 @@ func (server *Server) addEdge(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	for _, srcbackend := range srcbackends {
+		data, err := server.Metadata.GetBackendInformation(srcbackend)
+		if err != nil {
+			handleError(w, "Failed to get backend Info")
+			return
+		}
+		backendAddr := data["address"].(string)
+
+		stClient, err := server.getOrCreateStorageClient(backendAddr)
+		if err != nil {
+			handleError(w, "Failed to create a storage client to backend: "+backendAddr)
+			return
+		}
+
+		e := stClient.RemoveVertex(srcId, &succ)
+		if e != nil || !succ {
+			handleError(w, "Failed to delete vertex to backend")
+			return
+		}
+	}
+
 	err = server.Metadata.SetVertexLocation(graphID, partitionID, srcId)
 	if err != nil {
 		handleError(w, "Failed to update vertex in Metadata")

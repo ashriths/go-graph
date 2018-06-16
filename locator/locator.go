@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"math/rand"
 	"time"
-	"reflect"
 	"errors"
 )
 
@@ -35,7 +34,7 @@ type RandomLocator struct {
 
 func (randomLocator *RandomLocator) RelocateConnectedElements(element graph.ElementInterface) (uuid.UUID, error) {
 	//panic("implement me")
-	if reflect.TypeOf(graph.Edge{}) == reflect.TypeOf(element) {
+	if graph.GetElementType(element) == graph.EDGE {
 		edge := element.(graph.EdgeInterface)
 		err, src := edge.GetSrcVertex()
 		if err != nil {
@@ -49,7 +48,7 @@ func (randomLocator *RandomLocator) RelocateConnectedElements(element graph.Elem
 		}
 		return *partitionID, nil
 	}
-	return uuid.New(), nil
+	return uuid.New(), errors.New("Element not of type EDGE")
 }
 
 func (randomLocator *RandomLocator) createPartition(element graph.ElementInterface) (uuid.UUID, error) {
@@ -172,11 +171,17 @@ func (ccLocator *CCLocator) FindPartition(element graph.ElementInterface) (uuid.
 
 func (ccLocator *CCLocator) RelocateConnectedElements(element graph.ElementInterface) (uuid.UUID, error) {
 	//panic("implement me")
-	if reflect.TypeOf(graph.Edge{}) == reflect.TypeOf(element) {
+	if graph.GetElementType(element) == graph.EDGE {
 		edge := element.(graph.EdgeInterface)
 		err, src := edge.GetSrcVertex()
 		if err != nil {
 			system.Logln("Failed to fetch source vertex for edge: ", edge.GetUUID().String())
+			return uuid.New(), err
+		}
+
+		err, dest := edge.GetDestVertex()
+		if err != nil {
+			system.Logln("Failed to fetch destination vertex for edge: ", edge.GetUUID().String())
 			return uuid.New(), err
 		}
 
@@ -194,6 +199,8 @@ func (ccLocator *CCLocator) RelocateConnectedElements(element graph.ElementInter
 
 		neighbors := append(srcParents, srcChildren...)
 		partitionCounts := map[*uuid.UUID]int{}
+		partition, _, err := ccLocator.Metadata.GetVertexLocation(dest.GetGraphId(), dest.GetUUID())
+		partitionCounts[partition] += 1
 		for _, neighbor := range neighbors {
 			partition, _, err := ccLocator.Metadata.GetVertexLocation(neighbor.GetGraphId(), neighbor.GetUUID())
 			if err != nil {
