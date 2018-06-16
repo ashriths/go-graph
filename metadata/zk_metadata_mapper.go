@@ -332,20 +332,20 @@ func (self *ZkMetadataMapper) SetPartitionInformation(graphID uuid.UUID, partiti
 	var exists bool
 	var err error
 
-	znodePath := path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionID.String())
+	znodePath := path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionId.String())
 	exists, err = self.checkZnodeExists(znodePath)
 	if err != nil {
-		system.Logf("Error while checking if %s partition exists", partitionID.String())
+		system.Logf("Error while checking if %s partition exists", partitionId.String())
 		return err
 	}
 	if exists != true {
-		system.Logf("%s partition does not exist", partitionID.String())
+		system.Logf("%s partition does not exist", partitionId.String())
 		return fmt.Errorf("Partition does not exist")
 	}
 
 	err = self.setZnodeData(znodePath, data, DEFAULTVERSION)
 	if err != nil {
-		system.Logf("Error while setting data at %s partition", partitionID.String())
+		system.Logf("Error while setting data at %s partition", partitionId.String())
 		return err
 	}
 	return nil
