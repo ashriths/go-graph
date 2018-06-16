@@ -21,6 +21,7 @@ doc:
 
 build:
 	go get github.com/google/uuid
+	go get github.com/samuel/go-zookeeper/zk
 
 test:
 	go test ./...
