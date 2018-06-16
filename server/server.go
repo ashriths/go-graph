@@ -285,7 +285,7 @@ func (server *Server) addEdge(w http.ResponseWriter, r *http.Request) {
 	edgeId := uuid.New()
 	edge := graph.E(graphID, edgeId, srcId, destId, edgeName, data)
 
-	partitionId, backends, err := server.Metadata.GetVertexLocation(graphID, srcId)
+	_, backends, err := server.Metadata.GetVertexLocation(graphID, srcId)
 	for _, backend := range backends {
 		data, err := server.Metadata.GetBackendInformation(backend)
 		if err != nil {
@@ -307,16 +307,16 @@ func (server *Server) addEdge(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = server.Metadata.CreateEdge(graphID, *partitionId, edgeId)
+	err = server.Metadata.CreateEdge(graphID, edgeId, srcId)
 	if err != nil {
 		handleError(w, "Failed to create edge in Metadata")
 		return
 	}
 
 	//var inedge = map[string][]string{}
-	partitionId, backends, err = server.Metadata.GetVertexLocation(graphID, destId)
+	_, backends, err = server.Metadata.GetVertexLocation(graphID, destId)
 	if err != nil {
-		handleError(w,"Failed to fetch backends for destination vertex")
+		handleError(w, "Failed to fetch backends for destination vertex")
 		return
 	}
 	var backendInfo []string
@@ -441,7 +441,7 @@ func (server *Server) getInEdges(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, backends:= range inEdges {
+	for _, backends := range inEdges {
 		for _, backend := range backends.([]string) {
 			data, err := server.Metadata.GetBackendInformation(backend)
 			if err != nil {
@@ -556,7 +556,7 @@ func (server *Server) getParentVertices(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	for _, backends:= range inEdges {
+	for _, backends := range inEdges {
 		for _, backend := range backends.([]string) {
 			data, err := server.Metadata.GetBackendInformation(backend)
 			if err != nil {
@@ -620,7 +620,6 @@ func (server *Server) getParentVertices(w http.ResponseWriter, r *http.Request) 
 	responsemsg := map[string]interface{}{"msg": "Successfully got parent vertices", "success": true, "data": edges}
 	writeResponse(w, responsemsg)
 }
-
 
 func (server *Server) getChildVertices(w http.ResponseWriter, r *http.Request) {
 	var edges []graph.Edge
@@ -704,7 +703,6 @@ func (server *Server) getChildVertices(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 
 	system.Logln("Successfully got child vertices")
 

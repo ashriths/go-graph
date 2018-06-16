@@ -200,7 +200,7 @@ func (self *ZkMetadataMapper) UpdateVertexInformation(graphID uuid.UUID, vertexI
 			system.Logf("Error while retrieving data stored at %s vertex", vertexID.String())
 			return err
 		}
-		curData[key.(string)] = value.(string)
+		curData[key.(string)] = value
 		err = self.setZnodeData(znodePath, curData, statusInfo.Version)
 		if err != nil {
 			system.Logf("Error while updating data at %s vertex. Trying again..", vertexID.String())
