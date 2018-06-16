@@ -328,7 +328,7 @@ func (self *ZkMetadataMapper) GetVertexInformation(graphID uuid.UUID, vertexID u
 	return curData, err
 }
 
-func (self *ZkMetadataMapper) SetPartitionInformation(graphID uuid.UUID, partitionID uuid.UUID, data interface{}) error {
+func (self *ZkMetadataMapper) SetPartitionInformation(graphID uuid.UUID, partitionId uuid.UUID, data interface{}) error {
 	var exists bool
 	var err error
 
@@ -379,7 +379,7 @@ func (self *ZkMetadataMapper) AddBackendToPartition(graphID uuid.UUID, partition
 		system.Logf("Error while adding %s backend to %s partition", backendID, partitionId.String())
 		return nil, nil, err
 	}
-	backendNode := path.Join(ROOT, GRAPH, graphID.String(), partitionId.String())
+	backendNode := path.Join(ROOT, GRAPH, graphID.String(), PARTITION, partitionId.String())
 
 	// pass the full path upto node whose children have to be watched
 	liveBackends, watch, err = self.GetWatchOnChildren(backendNode)

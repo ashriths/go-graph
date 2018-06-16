@@ -138,11 +138,11 @@ func (self *InMemoryIOMapper) UpdateReplica(data interface{}, succ *bool) error 
 }
 
 func (self *InMemoryIOMapper) RegisterToHostPartition(ids []uuid.UUID, succ *bool) error {
-	_, watch, e := self.Metadata.AddBackendToPartition(ids[0], ids[1], self.BackendId)
+	_, _, e := self.Metadata.AddBackendToPartition(ids[0], ids[1], self.BackendId)
 	if e != nil {
 		return e
 	}
-	go self.startWatchingPartition(ids[0], ids[1], watch)
+	//go self.startWatchingPartition(ids[0], ids[1], watch)
 	return e
 }
 
@@ -151,19 +151,21 @@ func (self *InMemoryIOMapper) startWatchingPartition(graphId uuid.UUID, partitio
 	_watch = watch.(<-chan zk.Event)
 	for {
 		evt := <-_watch
-		system.Logln("Watch fired for ", partitionId.String(), evt.Err)
-		newBack, e := self.Metadata.FindNewBackendForPartition(graphId, partitionId)
-		if e != nil {
-			system.Logln("Cannot get new partition to replicate", e)
-		}
-		e = self.ReplicateToBackend(graphId, partitionId, newBack)
-		if e != nil {
-			system.Logln("Error while replicating. ", e)
+		system.Logln("Watch fired for ", partitionId.String(), evt.Path, evt.Type)
+		if evt.Type == zk.EventNodeDeleted{
+			newBack, e := self.Metadata.FindNewBackendForPartition(graphId, partitionId)
+			if e != nil {
+				system.Logln("Cannot get new partition to replicate", e)
+			}
+			e = self.replicateToBackend(graphId, partitionId, newBack)
+			if e != nil {
+				system.Logln("Error while replicating. ", e)
+			}
 		}
 	}
 }
 
-func (self *InMemoryIOMapper) ReplicateToBackend(graphId uuid.UUID, partitionID uuid.UUID, backendId string) error {
+func (self *InMemoryIOMapper) replicateToBackend(graphId uuid.UUID, partitionID uuid.UUID, backendId string) error {
 	self.Memory.kvStore.dataLock.Lock()
 	defer self.Memory.kvStore.dataLock.Unlock()
 	var succ bool
