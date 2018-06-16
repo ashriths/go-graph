@@ -19,7 +19,7 @@ const (
 
 type Locator interface {
 	FindPartition(element graph.ElementInterface) (uuid.UUID, error)
-	RelocateConnectedElements(element graph.ElementInterface) error
+	RelocateConnectedElements(element graph.ElementInterface) (uuid.UUID, error)
 	//FindBackend(element graph.Element, zkConn *metadata.ZkMetadataMapper, numBackends int) (string, error)
 }
 
@@ -33,9 +33,23 @@ type RandomLocator struct {
 	StClient []*storage.StorageClient
 }
 
-func (randomLocator *RandomLocator) RelocateConnectedElements(element graph.ElementInterface) error {
+func (randomLocator *RandomLocator) RelocateConnectedElements(element graph.ElementInterface) (uuid.UUID, error) {
 	//panic("implement me")
-	return nil
+	if reflect.TypeOf(graph.Edge{}) == reflect.TypeOf(element) {
+		edge := element.(graph.EdgeInterface)
+		err, src := edge.GetSrcVertex()
+		if err != nil {
+			system.Logln("Failed to fetch source vertex for edge: ", edge.GetUUID().String())
+			return uuid.New(), err
+		}
+		partitionID, _, err := randomLocator.Metadata.GetVertexLocation(src.GetGraphId(), edge.GetUUID())
+		if err != nil {
+			system.Logln("Failed to fetch partitionid for vertex: ", src.GetUUID().String())
+			return uuid.New(), err
+		}
+		return *partitionID, nil
+	}
+	return uuid.New(), nil
 }
 
 func (randomLocator *RandomLocator) createPartition(element graph.ElementInterface) (uuid.UUID, error) {

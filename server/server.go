@@ -285,7 +285,44 @@ func (server *Server) addEdge(w http.ResponseWriter, r *http.Request) {
 	edgeId := uuid.New()
 	edge := graph.E(graphID, edgeId, srcId, destId, edgeName, data)
 
-	_, backends, err := server.Metadata.GetVertexLocation(graphID, srcId)
+	var srcVertex *graph.Vertex
+	_, srcbackends, err := server.Metadata.GetVertexLocation(graphID, srcId)
+	for _, backend := range srcbackends {
+		data, err := server.Metadata.GetBackendInformation(backend)
+		if err != nil {
+			continue
+		}
+		backendAddr := data["address"].(string)
+
+		stClient, err := server.getOrCreateStorageClient(backendAddr)
+		if err != nil {
+			continue
+		}
+
+		e := stClient.GetVertexById(srcId, srcVertex)
+		if e != nil {
+			continue
+		} else {
+			break
+		}
+	}
+
+	if srcVertex == nil {
+		handleError(w, "Failed to get source vertex info")
+		return
+	}
+
+	partitionID, err := server.Locator.RelocateConnectedElements(edge)
+	if err != nil {
+		handleError(w, "Failed to get partition")
+		return
+	}
+	backends, err := server.Metadata.GetBackendsForPartition(graphID, partitionID)
+	if err != nil {
+		handleError(w, "Failed to get backends")
+		return
+	}
+
 	for _, backend := range backends {
 		data, err := server.Metadata.GetBackendInformation(backend)
 		if err != nil {
@@ -300,13 +337,23 @@ func (server *Server) addEdge(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		e := stClient.StoreEdge(edge, &succ)
+		e := stClient.StoreVertex(srcVertex, &succ)
+		if e != nil || !succ {
+			handleError(w, "Failed to add vertex to backend")
+			return
+		}
+		e = stClient.StoreEdge(edge, &succ)
 		if e != nil || !succ {
 			handleError(w, "Failed to add edge to backend")
 			return
 		}
 	}
 
+	err = server.Metadata.SetVertexLocation(graphID, partitionID, srcId)
+	if err != nil {
+		handleError(w, "Failed to update vertex in Metadata")
+		return
+	}
 	err = server.Metadata.CreateEdge(graphID, edgeId, srcId)
 	if err != nil {
 		handleError(w, "Failed to create edge in Metadata")
