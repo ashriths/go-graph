@@ -9,7 +9,7 @@ Today, there are a breadth of applications that process highly connected data by
 2. Fault tolerant and Replicated - System will sustain node failures at all times
 3. Sharded - Not all graph data is replicated everywhere. This can also be extended to geo- local sharding to improve data locality based on query analytics
 
-![alt text](/paper/images/replicas.png "Component Interaction Design")
+![Architecture Design](/paper/comp.png "Component Interaction Design")
 
 
 [Read more about this project and learn about benchmarks and evaluation](README.pdf)
